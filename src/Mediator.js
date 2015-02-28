@@ -482,6 +482,14 @@
 				return Mediator.apply(object, [config]);
 			}
 			
+			function use(api){
+				for(var channel in api){
+					subscribe(channel, api[channel]);
+				}
+				
+				return this;
+			}
+			
 			// export precepts
 			this.parent = parent;
 			this.children = children;
@@ -494,6 +502,7 @@
 			this.emit = emit;
 			this.broadcast = broadcast;
 			this.spawn = spawn;
+			this.use = use;
 			this.extend = mixin;
 			this.terp = interpolate;
 			this.ChannelPattern = ChannelPattern;
