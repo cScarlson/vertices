@@ -1,0 +1,167 @@
+
+<script src="file:///C:/Users/Cody/projects/dev/Mediation/Mediation/Mediator.js"></script>
+<script>
+;(function(){
+
+
+/* Channel Schema:
+
+	{proteus}://{interest}/{topic}[,/{subtopic|extensive}]
+	
+	e.g:
+			dealsService	://		found	/	deals	/	locations	/	local
+		|					|  |			|			|				|			|
+		 \				   /    \		   / \		   / \			   / \		   /
+		  \				  /		 \		  /   \		  /   \			  /   \		  /
+			   proteus			  interest		topic		 subtopic	 [extensive]
+	
+*/
+
+/* Divulgence Conventions:
+
+	Use Disclosure-Bindings
+ 
+*/
+
+/**
+ * @Intention: Demonstrative ParentModule
+ */
+var parentModule = v.Mediator.apply(new (function ParentModule(){})());
+
+/**
+ * @Intention: Core
+ */
+var core = new (function ShoppingModuleDirector(parentModule){
+	var thus = parentModule.spawn(this);
+	
+	function dealsRequestHandler(e, items, disclose){
+		//console.log('@core', e, items, this);
+		var disclosure = disclose;  // <-- demonstrative
+		this.fire('dealsModule://requested/deals', items, disclosure);
+	}
+	
+	this.on('core://request/deals', dealsRequestHandler);
+	
+	return this;
+})(parentModule);
+
+/**
+ * @Intention: Sandbox
+ */
+var facade = new (function Sandbox(core){
+	var thus = core.installTo(this);
+	
+	function routingHandler(e, dealsScope){
+		this.fire('router://deals', dealsScope);
+	}
+	
+	function dealsRequestHandler(e, items, disclose){
+		//console.log('@facade', e, items, this);
+		var authoraizations = {
+			'dealsController://requested/deals': function(products, disclosure){
+				thus.fire('core://request/deals', products, disclosure);
+			}
+		};
+		authoraizations[e.type] && authoraizations[e.type](items, disclose);
+	}
+	
+	this.on('dealsController://requested/deals', dealsRequestHandler);
+	//this.on('router://deals', routingHandler);
+	
+	return this;
+})(core);
+
+
+/**
+ * @Intention: Controller
+ */
+var dealsController = new (function DealsController(facade){
+	var thus = facade.installTo(this);
+	
+	function controller(e, $scope){
+		//console.log('@controller', e, $scope, this);
+		var disclosure = this.fire.bind(this, 'dealsController://found/deals', $scope);
+		var list = [{name: 'Banana'},{name: 'Orange'},{name: 'Pizza'}];
+		$scope.list = list;
+		this.fire('dealsController://requested/deals', list, disclosure);
+	}
+	
+	function dealsFoundHandler(e, $scope, deals){
+		$scope.deals = deals;
+		//console.log('@controller #foundDeals', e, $scope, deals);
+		var rendering = '';
+		for(var i=0; i<deals.length; i++){ rendering += '<br /><b>' + deals[i].name + ': ' + deals[i].discount + '</b>'; }
+		var body = document.querySelector('body');
+		body.innerHTML = rendering;
+	}
+	
+	this.on('dealsController://found/deals', dealsFoundHandler);
+	this.on('router://deals', controller);
+	
+	return this;
+})(facade);
+
+
+/**
+ * @Intention: Service
+ */
+var dealsService = new (function DealsService(facade){
+	var thus = facade.installTo(this);
+	
+	function dealsRequestHandler(e, items, disclose){
+		//console.log('@dealsModule', e, items, this);
+		var deals = [];
+		for(var i = 0, len = items.length; i < len; i++){
+			var deal = Object.create(items[i]);
+			deal.discount = '$' + Math.ceil(Math.random() * 100);
+			deals.push(deal);
+		}
+		disclose(deals);
+	}
+	
+	this.on('dealsModule://requested/deals', dealsRequestHandler);
+	
+	return this;
+})(facade);
+
+
+window.onload = function(){
+	core.broadcast('router://deals', new (function Scope(){})());
+}
+
+
+/*
+var someParent = new v.Mediator();
+
+var abstractChannelsDirector = new (function AbstractChannelsDirector(someParent){
+	var thus = someParent.installTo(this);
+	
+	function abstractChannelHandler(e, data){
+		console.log('@abstractChannelsDirector', e, data, this);
+	}
+	
+	//this.on('abstractChannels://{interest}/{topic}/:msg', abstractChannelHandler);
+	
+	return this;
+})(someParent);
+
+var abstractChannelsColleague = new (function AbstractChannelsDirector(abstractChannelsDirector){
+	var thus = abstractChannelsDirector.installTo(this);
+	
+	function abstractChannelHandler(e, data){
+		console.log('@abstractChannelsColleague', data);
+	}
+	
+	this.on('abstractChannels://{interest}/{topic}/:msg', abstractChannelHandler);
+	
+	return this;
+})(abstractChannelsDirector);
+
+abstractChannelsDirector.fire('abstractChannels://notice/Abstract/parameters', { a: 'datum' });
+*/
+
+console.log('@Faculties\n', core, facade, dealsController, dealsService);
+
+
+}());
+</script>
