@@ -483,8 +483,10 @@
 			}
 			
 			function use(api){
+				var api = api || {};
 				for(var channel in api){
-					subscribe(channel, api[channel]);
+					var handler = api[channel];
+					!!(channel && handler) && subscribe.call(this, channel, api[channel]);
 				}
 				
 				return this;
