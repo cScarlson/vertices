@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<html data-behavior="doc, docs;;html; ; mod;;  scope; , ;,  ">
+<head>
+    <title></title>
+	<meta charset="utf-8" />
+    <style>
+        [data-behavior] {
+            background: #222;
+            color: #fff;
+            border: solid 1px #fff;
+            min-width: 200px;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="a" data-behavior="test">
+        <span>A</span>
+
+        <div id="aa" data-behavior="test">
+            <span>AA</span>
+
+            <div id="aaa" data-behavior="test">
+                <span>AAA</span>
+            </div>
+        </div>
+
+        <div id="ab" data-behavior="test">
+            <span>AB</span>
+
+            <div id="aba" data-behavior="test">
+                <span>ABA</span>
+            </div>
+        </div>
+
+    </div>
+
+    <br /><br /><br />
+
+    <div data-wrapper="test">
+        <span>NONE</span>
+
+        <div id="b" data-behavior="test">
+            <span>B</span>
+
+            <div id="ba" data-behavior="test">
+                <span>BA</span>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+<script src="core/jquery-2.1.4.js"></script>
+<script src="core/core.js"></script>
+<script src="core/sandbox.js"></script>
+<script src="app.js"></script>
+
+<script src="common/test-module.js"></script>
+</html>
