@@ -174,10 +174,10 @@
     //        //console.log('^', root.$children);
     //        //console.log('^', root.$channels);
 
-    //        var sibling1 = root.$installTo(new function Sibling1() { });
+    //        var rootTwin1 = root.$installTo(new function Sibling1() { });
 
-    //        //console.log('~1', sibling1);
-    //        //console.log('~1', sibling1.$channels === root.$channels);
+    //        //console.log('~1', rootTwin1);
+    //        //console.log('~1', rootTwin1.$channels === root.$channels);
 
     //        var child1 = root.$spawn(new function Child1() { });
 
@@ -203,8 +203,8 @@
     //            console.log('@root #root1 #args', e, data);
     //        });
 
-    //        sibling1.$on('root1', function (e, data) {
-    //            console.log('@sibling1 #root1 #args', e, data);
+    //        rootTwin1.$on('root1', function (e, data) {
+    //            console.log('@rootTwin1 #root1 #args', e, data);
     //        });
 
     //        child1.$on('root1', function (e, data) {
@@ -228,7 +228,7 @@
     //        //root.$broadcast('root1', { root: 'broadcast' });
     //        //root.$anycast('root1', { root: 'anycast' });
 
-    //        //sibling1.$fire('root1', { sibling1: 'fire' });
+    //        //rootTwin1.$fire('root1', { rootTwin1: 'fire' });
 
     //        child1.$fire('root1', { child1: 'fire' });
     //        child1.$emit('root1', { child1: 'emit' });
@@ -502,9 +502,10 @@
         var Mediator = function Mediator(parent) {
             var thus = this;
             var parent = parent || this
+              , siblings = parent.$children || []
               , children = []
               , channels = {}
-            ;
+              ;
 
             var ChannelEvent = function ChannelEvent(options) {
 
@@ -531,15 +532,13 @@
             function publish(channel) {
                 if (!this.$channels[channel]) this.$channels[channel] = [];
                 var args = Array.prototype.slice.call(arguments, 1)
-                  , event = new ChannelEvent({ channel: channel })
-                ;
+                  , event = new ChannelEvent({ channel: channel });
+
                 args.unshift(event);
 
                 for (var i = 0, len = this.$channels[channel].length; i < len; i++) {
                     var subscription = this.$channels[channel][i];
-                    if (!event.propagationStopped) {
-                        subscription.handler.apply(subscription.context, args);
-                    }
+                    subscription.handler.apply(subscription.context, args);
                 }
 
                 return this;
@@ -553,36 +552,46 @@
                 return this.$publish.apply(this, arguments);
             }
 
-            function fire() {
+            function post() {
+
                 for (var i = 0, len = this.$siblings.length; i < len; i++) {
                     var sibling = this.$siblings[i];
-                    sibling.$publish.apply(sibling, arguments);
+                    if (sibling !== this) {
+                        sibling.$publish.apply(sibling, arguments);
+                    }
                 }
 
+                return this;
+            }
+
+            function fire() {
+                this.$trigger.apply(this, arguments).$emit.apply(this, arguments).$post.apply(this, arguments).$broadcast.apply(this, arguments);
                 return this;
             }
 
             function emit() {
+
                 if (parent !== this) {
                     parent.$publish.apply(parent, arguments);
-                    //parent.$emit.apply(parent, arguments);  // is indefinite bubbling the most appealing strategy?
+                    parent.$emit.apply(parent, arguments);
                 }
 
                 return this;
             }
 
-            function broadcast() {  // twins, siblings, parent++, children++
+            function broadcast() {
 
                 for (var i = 0, len = children.length; i < len; i++) {
                     var child = children[i];
                     child.$publish.apply(child, arguments);
+                    child.$broadcast.apply(child, arguments);
                 }
 
                 return this;
             }
 
-            function anycast() {  // twins & siblings
-                this.$fire.apply(this, arguments).$emit.apply(this, arguments).$broadcast.apply(this, arguments);
+            function anycast() {
+                //this.what(?);
                 return this;
             }
 
@@ -613,16 +622,16 @@
             // export precepts
             this.$parent = parent;
             this.$children = children;
-            this.$siblings = this.$parent.$children;
+            this.$siblings = siblings;
             this.$channels = channels;
             this.$subscribe = subscribe;
             this.$publish = publish;
             this.$on = on;
             this.$trigger = trigger;
+            this.$post = post;
             this.$fire = fire;
             this.$emit = emit;
             this.$broadcast = broadcast;
-            this.$anycast = anycast;
             this.$installTo = installTo;
             this.$spawn = spawn;
 
@@ -636,20 +645,15 @@
         //console.log('^', root.$children);
         //console.log('^', root.$channels);
 
-        var sibling1 = root.$installTo(new function Sibling1() { });
+        var rootTwin1 = root.$installTo(new function Sibling1() { });
 
-        //console.log('~1', sibling1);
-        //console.log('~1', sibling1.$channels === root.$channels);
+        //console.log('~1', rootTwin1);
+        //console.log('~1', rootTwin1.$channels === root.$channels);
 
         var child1 = root.$spawn(new function Child1() { });
 
         //console.log('+1', child1);
         //console.log('+1', child1.$parent === root);
-
-        var child2 = root.$spawn(new function Child2() { });
-
-        //console.log('+2', child2);
-        //console.log('+2', child2.$parent === root);
 
         var child1Child1 = child1.$spawn(new function Child1Child1() { });
 
@@ -661,20 +665,31 @@
         //console.log('+1+1+1', child1Child1Child1);
         //console.log('+1+1+1', child1Child1Child1.$parent === child1Child1);
 
+        var child2 = root.$spawn(new function Child2() { });
+
+        //console.log('+2', child2);
+        //console.log('+2', child2.$parent === root);
+
+        var child2Child1 = child2.$spawn(new function Child2Child1() { });
+
+        //console.log('+2+1', child2Child1);
+        //console.log('+2+1', child2Child1.$parent === child2);
+
+        var child2Child1Child1 = child2Child1.$spawn(new function Child2Child1Child1() { });
+
+        //console.log('+2+1+1', child2Child1Child1);
+        //console.log('+2+1+1', child2Child1Child1.$parent === child2Child1);
+
         root.$on('root1', function (e, data) {
             console.log('@root #root1 #args', e, data);
         });
 
-        sibling1.$on('root1', function (e, data) {
-            console.log('@sibling1 #root1 #args', e, data);
+        rootTwin1.$on('root1', function (e, data) {
+            console.log('@rootTwin1 #root1 #args', e, data);
         });
 
         child1.$on('root1', function (e, data) {
             console.log('@child1 #root1 #args', e, data);
-        });
-
-        child2.$on('root1', function (e, data) {
-            console.log('@child2 #root1 #args', e, data);
         });
 
         child1Child1.$on('root1', function (e, data) {
@@ -685,18 +700,34 @@
             console.log('@child1Child1Child1 #root1 #args', e, data);
         });
 
-        //root.$fire('root1', { root: 'fire' });
-        //root.$emit('root1', { root: 'emit' });
+        child2.$on('root1', function (e, data) {
+            console.log('@child2 #root1 #args', e, data);
+        });
+
+        child2Child1.$on('root1', function (e, data) {
+            console.log('@child2Child1 #root1 #args', e, data);
+        });
+
+        child2Child1Child1.$on('root1', function (e, data) {
+            console.log('@child2Child1Child1 #root1 #args', e, data);
+        });
+
+        root.$fire('root1', { root: 'fire' });
+        root.$emit('root1', { root: 'emit' });
+        //root.$trigger('root1', { root: 'broadcast' });
         //root.$broadcast('root1', { root: 'broadcast' });
-        //root.$anycast('root1', { root: 'anycast' });
 
-        //sibling1.$fire('root1', { sibling1: 'fire' });
+        //rootTwin1.$fire('root1', { rootTwin1: 'fire' });
 
-        child1.$fire('root1', { child1: 'fire' });
-        child1.$emit('root1', { child1: 'emit' });
-        child1.$broadcast('root1', { child1: 'broadcast' });
-        child1.$anycast('root1', { child1: 'anycast' });
 
+        //child1.$fire('root1', { child1: 'fire' });
+        //child1.$emit('root1', { child1: 'emit' });
+        //child1.$broadcast('root1', { child1: 'broadcast' });
+
+
+        //child2Child1Child1.$fire('root1', { child2: 'fire' });
+        //child2Child1Child1.$emit('root1', { child1: 'emit' });
+        //child2Child1Child1.$broadcast('root1', { child1: 'broadcast' });
 
 
         var EventHub = function EventHub() {
@@ -1244,7 +1275,7 @@
 
                 var resolveBehavior = function resolveBehavior(scope, behavior, i, a) {
                     var scope = ($root.is('html')) ? document : scope;
-                    this.start(behavior, scope, parent, slug);
+                    this.start(behavior, scope, parent, scopeId);
                 }.bind(this, $root[0]);
 
                 var resolveChildren = function resolveChildren(i, scope) {
@@ -1295,6 +1326,10 @@
             var thus = this;
 
             function register(id, Module) {
+                // 1st arg can be String:= id, Function:= Module, Object:= config
+                alert("KEEP EVENT HUB FOR Sandbox/$.notify -- THEN, parent.$spawn(Module.prototype)");  // $.notify, this.$fire
+                // 2nd arg can be Function:= Module, Object:= config
+
                 if (!!id) {
                     if (typeIdMap[id]) {
                         typeIdMap[id](Module);
@@ -1302,7 +1337,7 @@
                         typeIdMap['%DEFAULT%'](id, Module);
                     }
                 } else {
-                    // handle services & Non-DOM modules. E.G: CORE.register(Constructor);
+                    // handle services & Non-DOM modules. E.G: CORE.register_service(Constructor);
                 }
 
                 return this;
@@ -1314,7 +1349,8 @@
             return this;
         };
         
-        var V = Vertex.apply(Vertex).call(function V() {
+        var V = Vertex.call(function V() {
+            // this instanceof V ? return new Vertices( new Core() );
             return V.register.apply(V, arguments);
         });
 

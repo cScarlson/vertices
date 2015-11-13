@@ -184,4 +184,34 @@ var Alert = function Alert($) {
     return this;
 };
 
-V('$popup', Popup)('$process', ProcessPending)('$alert', Alert);
+var Modal = function Modal($) {
+    var thus = this;
+
+    function initialize() {
+        $.css({
+            display: 'none'
+        });
+
+        // on 'ui>$alert' -> fire 'ui>$backdrop:show'
+    }
+
+    function destroy() { }
+
+    // export precepts
+    this.init = initialize;
+    this.destroy = destroy;
+
+    return this;
+};
+
+V('$popup', Popup)('$process', ProcessPending)('$alert', Alert)('$modal', Modal);
+
+
+//V.data({  // equivalent: V['data' | null]('$APP', { ... })
+//    app: 'configs'
+//});
+
+//V('person', {
+//    name: 'Name not found',
+//    height: '6`2'
+//});
