@@ -206,6 +206,14 @@ var Modal = function Modal($) {
 
 V('$popup', Popup)('$process', ProcessPending)('$alert', Alert)('$modal', Modal);
 
+new V(function Core() {
+    var thus = this;
+
+    this.id = 'the-core';
+
+    return this;
+});
+
 
 //V.data({  // equivalent: V['data' | null]('$APP', { ... })
 //    app: 'configs'
