@@ -1,9 +1,13 @@
 ﻿
-V('doc', function DocAndStuff($) {
+
+V('doc', { data: 'for Doc()' })('docs', 'DOCUMENTS');
+
+
+V('doc', function Doc($) {
     var thus = this;
 
-    function init() {
-        //console.log('DocAndStuff', $);
+    function init(config) {
+        console.log('DOC', config);
     }
 
     function destroy() { }
@@ -13,11 +17,11 @@ V('doc', function DocAndStuff($) {
     this.destroy = destroy;
 
     return this;
-}).register('docs', function DocAndStuff($) {
+}).register('docs', function Docs($) {
     var thus = this;
 
-    function init() {
-        //console.log('DocAndStuff', $);
+    function init(config) {
+        console.log('DOCS', config);
         this.$on('test', function (e, data) {
             console.log('@docs#test', $.context[0]);
         });
@@ -53,3 +57,18 @@ V('doc', function DocAndStuff($) {
 
     return this;
 });
+
+
+V(function Service() {
+    var thus = this;
+
+    console.log('@Service #construct', this);
+
+    function initialize() {
+        console.log('@Service #init', this);
+    }
+    function destroy() { }
+
+    return this;
+});
+

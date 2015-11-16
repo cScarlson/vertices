@@ -21,6 +21,9 @@
         this.register_events(channels.core);
 
         $.addEvent('hashchange', onHashChange).listen(channels.app.hashchange);
+        this.$on('test', function (e, data) {
+            console.log('@APP#test', this, $.context[0]);
+        });
 
         ApplicationDirector.prototype.init();
     }
@@ -206,7 +209,7 @@ var Modal = function Modal($) {
 
 V('$popup', Popup)('$process', ProcessPending)('$alert', Alert)('$modal', Modal);
 
-new V(function Core() {
+var mod = new V(function Core() {
     var thus = this;
 
     this.id = 'the-core';

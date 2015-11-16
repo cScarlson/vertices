@@ -9,7 +9,7 @@
     /**
      * @ _CORE
      */
-    var _CORE = new (function Core() {
+    var Core = function Core() {
         var thus = this;
 
         var Mediator = function Mediator(parent) {
@@ -337,6 +337,35 @@
                 return new URLComponents(uri);
             }
 
+            function escapeHTML(s) {
+                return s.replace(/[&"<>]/g, function (c) {
+                    return {
+                        '&': '&amp;',
+                        '"': '&quot;',
+                        '<': '&lt;',
+                        '>': '&gt;'
+                    }[c];
+                });
+            }
+
+            function interpolate(str) {
+                return function interpolate(o) {
+                    return str.replace(/{([^{}]*)}/g, function (a, b) {
+                        var r = o[b], val = (typeof r === 'string' || typeof r === 'number' ? r : a);
+                        return escapeHTML(val);  // TODO: escape HTML-Entities
+                    });
+                }
+            }
+
+            function INSECURE_INTERPOLATE(str) {
+                return function interpolate(o) {
+                    return str.replace(/{([^{}]*)}/g, function (a, b) {
+                        var r = o[b], val = (typeof r === 'string' || typeof r === 'number' ? r : a);
+                        return val;  // TODO: escape HTML-Entities
+                    });
+                }
+            }
+
             // export precepts
             this.to_s = _toString;
             this.is_arr = is_array;
@@ -348,6 +377,9 @@
             this.debounce = debounce;
             this.throttle = throttle;
             this.parse_uri = parse_uri;
+            this.escapeHTML = escapeHTML;
+            this.interpolate = interpolate;
+            this.INSECURE_INTERPOLATE = INSECURE_INTERPOLATE;
 
             return this;
         };
@@ -660,7 +692,7 @@
             this.log(1, "INITIALIZING DIRECTOR");
             this.director.init();
             this.register_director = this.noop;
-
+            
             return this;
         }
 
@@ -672,22 +704,21 @@
         function registerModule(moduleId, Module) {
 
             if (typeof moduleId === 'string' && typeof Module === 'function') {
-                //this.log(1, "REGISTERING MODULE : " + moduleId);
-                // parent.$spawn(Module.prototype);
+                this.log(1, "REGISTERING MODULE : " + moduleId);
                 this.modules[moduleId] = {  // TODO: Register should create a promise whose onFulfill-handler constructs an object.
                     Module: Module,
                     id: moduleId,
                     instances: []
                 };
             } else {
-                //this.log(1, "Module '" + to_s(moduleId) + "' Registration : FAILED : one or more arguments are of incorrect type")
+                this.log(1, "Module '" + to_s(moduleId) + "' Registration : FAILED : one or more arguments are of incorrect type")
             }
 
             return this;
         }
 
         function registerService(Service) {
-            var id = this.rfc4();
+            var id = this.generate_uuid();
             var sandbox = new function Utils() { }, instance;
             // this.$installTo(Service.prototype);
             instance = new Service(sandbox);
@@ -700,31 +731,65 @@
             return this;
         }
 
+        function getScopeData(moduleId, context) {
+            var selectorTemplate = 'script[type="application/json"][data-config="{id}"]'
+              , configSelector = this.interpolate(selectorTemplate)({ id: moduleId });
+            var $el
+              , $config
+              , $data = {}
+              , data = {}
+              , value = this.values[moduleId]
+              ;
+
+            if (context === document) {
+                $el = jQuery('html')
+            } else {
+                $el = jQuery(context);
+            }
+
+            if ($el && $el.size()) {
+                $config = $el.find(configSelector);
+                $data = $el.data();
+
+                if ($config && $config.size()) {
+                    this.extend(data, JSON.parse($config.html()));
+                }
+
+                this.extend(data, $data);
+
+            }
+
+            this.extend(data, { settings: value });
+            delete data.behavior
+
+            return data;
+        }
+
         function start(moduleId, context, scopeId, medium) {  // TODO: Start should resolve a promise whose onFulfill-handler constructs an object.
             var mod = this.modules[moduleId]
-              , data = this.values[moduleId]
+              , Module
               , sandbox
               , instance
+              , data = this.get_scope_data(moduleId, context)
               , details
               ;
 
             if (mod) {
-                //this.log(1, "CONSTRUCTING MODULE : " + moduleId);
-                //console.log('>>', moduleId, medium);
-                console.log('>>', moduleId, context);
+                this.log(1, "CONSTRUCTING MODULE : " + moduleId);
+                Module = mod.Module;
                 sandbox = new this.Sandbox(this, moduleId, context);
-                instance = new mod.Module(sandbox);
+                instance = new Module(sandbox);
                 details = { module: mod, instance: instance, data: data };
-                medium.$installTo(instance);
-
+                
                 this.trigger_event({ type: '$core://created/module', data: details });
 
                 if (instance && instance.init && instance.destroy) {
-                    //this.log(1, "INITIALIZING MODULE : " + moduleId);
+                    this.log(1, "INITIALIZING MODULE : " + moduleId);
                     mod.instances.push({ instance: instance, data: data });
+                    medium.$installTo(instance);
                     instance.init(data);
                 } else {
-                    //this.log(1, "Module '" + moduleId + "' Registration : FAILED : instance has no init or destroy functions");
+                    this.log(1, "Module '" + moduleId + "' Registration : FAILED : instance has no init or destroy functions");
                 }
 
             }
@@ -835,6 +900,7 @@
         this.register_value = registerValue;
         this.register_module = registerModule;
         this.register_service = registerService;
+        this.get_scope_data = getScopeData;
         this.start = start;
         this.stop = stop;
         this.start_all = startAll;
@@ -842,29 +908,27 @@
         this.arm = autoRegisterModules;
         this.init = initialize;
 
-        console.log('$', this);
-
         return this;
-    })();
+    };
 
 
-    var Vertex = ENV['V'] = ENV['Vertices'] = new (function Vertices(_CORE) {
+    var Vertex = ENV['V'] = ENV['Vertices'] = new (function Vertices(CORE) {
         var STATIC = this;
         var definiendaMap = {
             '$CONFIG': 'config',
             '$SANDBOX': 'sandbox',
             '$APP': 'director',
             ' VALUE ': function (key, value) {
-                // _CORE.register_value(key, value);
+                // CORE.register_value(key, value);
                 // core writes to memory store as this.values[key] = value;
                 // on module start: instance = new this.modules[id].Module(sandbox);...
                 // instance.init( new this.values[id] ) --> id === key
             },
             ' MODULE ': function (id, Module) {
-                _CORE.register_module(id, Module);
+                CORE.register_module(id, Module);
             },
             ' SERVICE ': function (Service) {  // Services receive a special sandbox including $CONFIG
-                _CORE.register_service(Service);
+                CORE.register_service(Service);
             }
         };
 
@@ -872,32 +936,32 @@
             var thus = this;
 
             function config(_config) {
-                _CORE.register_configuration(_config);
+                CORE.register_configuration(_config);
                 return this;
             }
 
             function sandbox(Sandbox) {
-                _CORE.register_sandbox(Sandbox);
+                CORE.register_sandbox(Sandbox);
                 return this;
             }
 
             function director(Director) {
-                _CORE.register_director(Director);
+                CORE.register_director(Director);
                 return this;
             }
 
             function value(key, value) {
-                _CORE.register_value(key, value);
+                CORE.register_value(key, value);
                 return this;
             }
 
             function module(id, Module) {
-                _CORE.register_module(id, Module);
+                CORE.register_module(id, Module);
                 return this;
             }
 
             function service(Service) {
-                _CORE.register_service(Service);
+                CORE.register_service(Service);
                 return this;
             }
 
@@ -913,6 +977,7 @@
         };
 
         var V = Vertex.call(function V(id, definienda) {
+            var args = Array.prototype.slice.call(arguments, 0);
             var Module = (id && id.call) ? id : definienda
               , id = (Module === id) ? false : id
               ;  // Determines if V was invoked as: V('id', Mod) or V(Mod)
@@ -926,15 +991,14 @@
               ;
 
             if (instantiative) {
-                return console.log('#instanceof', this instanceof V);
-                //return new Vertices( new Core() );
+                return new Vertices(new Core());
             }
 
             if (id) {  // TODO: abstract the Module vs value conditions
                 if (Module) {
                     if (id in definiendaMap) {
                         method = definiendaMap[id];
-                        Array.prototype.splice.call(arguments, 0, 1);
+                        args.splice(0, 1);
                     } else {  // normal module definition
                         method = 'module';
                     }
@@ -947,13 +1011,13 @@
                 method = 'config';
             }
 
-            return V[method].apply(V, arguments);
+            return V[method].apply(V, args);
         });
 
         V.define = V.register = V;
 
         return V;
-    })(_CORE);
+    })(new Core());
 
 
 
