@@ -57,12 +57,42 @@
                 return this;
             }
 
+            // TODO: Allow alternative params. Channels-to-Handlers is a many-to-many relationship. Also, allow empty args: repeal subscriptions for all with context.
+            function unsubscribe(channel, handler) {
+                var context = this;
+
+                for (var i = this.$channels[channel].length; i--;) {
+                    var subscription = this.$channels[channel][i];
+
+                    if (subscription.context === context) {
+                        if (handler) {
+
+                            if (subscription.handler === handler) {
+                                this.$channels[channel].splice(i, 1);
+                            }
+
+                        } else {
+                            this.$channels[channel].splice(i, 1);
+                        }
+
+                    }
+
+                }
+
+                return this;
+            }
+
+
             function on() {
                 return this.$subscribe.apply(this, arguments);
             }
 
             function trigger() {
                 return this.$publish.apply(this, arguments);
+            }
+
+            function off() {
+                return this.$unsubscribe.apply(this, arguments);
             }
 
             function post() {
@@ -126,8 +156,10 @@
                 object.$channels = channels;
                 object.$subscribe = subscribe;
                 object.$publish = publish;
+                object.$unsubscribe = unsubscribe;
                 object.$on = on;
                 object.$trigger = trigger;
+                object.$off = off;
                 object.$post = post;
                 object.$fire = fire;
                 object.$emit = emit;
@@ -158,8 +190,10 @@
             this.$channels = channels;
             this.$subscribe = subscribe;
             this.$publish = publish;
+            this.$unsubscribe = unsubscribe;
             this.$on = on;
             this.$trigger = trigger;
+            this.$off = off;
             this.$post = post;
             this.$fire = fire;
             this.$emit = emit;
@@ -265,6 +299,25 @@
                 return this;
             };
 
+            function mixin(__splat__) {
+                var first = Array.prototype.slice.call(arguments, 0, 1)[0]  // preserve first object in arguments
+                    , second = Array.prototype.splice.call(arguments, 1, 1)[0]  // remove next (second) argument from arguments
+                    , key;
+
+                if (second) {
+                    for (key in second) {
+                        if ((typeof second[key]) === 'object' && (typeof first[key]) === 'object') {
+                            mixin(first[key], second[key]);
+                        } else {
+                            first[key] = second[key];
+                        }
+                    }
+                    mixin.apply(this, arguments);
+                }
+
+                return first;
+            }
+
             function _toString(anything) { return Object.prototype.toString.call(anything); };
 
             function is_array(arr) {
@@ -277,6 +330,10 @@
 
             function extend() {
                 return jQuery.extend.apply(jQuery, arguments);
+            }
+
+            function noop() {
+                return jQuery.noop();
             }
 
             function cookie(options) {
@@ -366,11 +423,77 @@
                 }
             }
 
+            /**
+             * @ EXTERPOLATE | PARSE ROUTE-URI
+             */
+            function exterpolate(str) {
+                var str = str || '';
+                var re = /:[^\s/]+|{+[^\s/]+}+/g;
+                var matcher = new RegExp(str.replace(re, '([\\w-]+)'));
+
+                return function getValues(string) {
+                    if (!string.match(matcher)) return false;
+                    var string = string || '';
+                    var result = string.match(matcher);
+                    var keys = str.match(re);
+                    var values = result.slice(1);
+                    var map = {};
+
+                    if (keys && values) {
+                        for (var i = 0, len = keys.length; i < len; i++) {
+                            var key = keys[i].replace(/[:{}]+/g, '');
+                            var val = values[i];
+                            if (key !== val) map[key] = val;
+                        }
+                    }
+
+                    return map;
+                };
+            }
+
+            function template($node) {
+                return ($node && $node[0]) && $node[0].outerHTML;
+            }
+
+            function templateRepeat($template, collection) {
+                var tmpl = template($template);
+
+                function compileNode(object) {
+                    var html = interpolate(tmpl)(object);
+                    $template.before($(html).removeClass('tmpl'));
+                }
+
+                collection.forEach(compileNode);
+
+                //function compileNode(object) {
+                //    var html = interpolate(tmpl)(object);
+                //    nodes.push($(html).removeClass('tmpl')[0].outerHTML);
+                //}
+                //
+                //collection.forEach(compileNode);
+                //$template.before(nodes.join(''));
+
+                return {
+                    clear: function clear() {
+                        $template.siblings().remove();
+                        return this;
+                    },
+                    append: function append(collection) {
+                        templateRepeat($template, collection);
+                        return this;
+                    },
+                    update: function update(collection) {
+                        return this.clear().append(collection);
+                    }
+                };
+            }
+
             // export precepts
             this.to_s = _toString;
             this.is_arr = is_array;
             this.is_obj = is_object;
             this.extend = extend;
+            this.noop = noop;
             this.cookie = cookie;
             this.remove_cookie = remove_cookie;
             this.generate_uuid = rfc4;
@@ -380,6 +503,9 @@
             this.escapeHTML = escapeHTML;
             this.interpolate = interpolate;
             this.INSECURE_INTERPOLATE = INSECURE_INTERPOLATE;
+            this.exterpolate = exterpolate;
+            this.template = template;
+            this.templateRepeat = templateRepeat;
 
             return this;
         };
@@ -883,7 +1009,10 @@
         Utilities.apply(this);
         Mediator.apply(this);
         EventHubAdapter.call(this, new Mediator());
-        //this.mediator = new Mediator();
+        // #convenience
+        this.tpl = this.template;
+        this.repeat = this.templateRepeat;
+
         this.event_hub = new EventHubAdapter(this);
         this.http = new HTTP();
         this.dom = new DocumentUtilities();

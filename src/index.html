@@ -3,6 +3,7 @@
 <head>
     <title></title>
 	<meta charset="utf-8" />
+    <link href="core/core.css" rel="stylesheet" />
     <style>
         [data-behavior] {
             background: #222;
@@ -13,14 +14,14 @@
             margin: 4px 4px 4px 4px;
         }
     </style>
-    <script data-config="doc" type="application/json">
+    <script type="application/json" data-config="doc">
         {
             "doc": {
                 "data": "points"
             }
         }
     </script>
-    <script data-config="docs" type="application/json">
+    <script type="application/json" data-config="docs">
         {
             "docs": {
                 "data": "points"
@@ -81,11 +82,14 @@
 
     </div>
 
-</body>
-<script src="core/jquery-2.1.4.js"></script>
-<script src="core/core.js"></script>
-<script src="core/sandbox.js"></script>
-<script src="app.js"></script>
+    <div data-behavior="$include">core/components/components.html</div>
 
-<script src="common/test-module.js"></script>
+    <script src="core/jquery-2.1.4.js"></script>
+    <script src="core/core.js"></script>
+    <script src="core/sandbox.js"></script>
+    <script src="core/components/components.js"></script>
+    <script src="app.js"></script>
+
+    <script src="common/test-module.js"></script>
+</body>
 </html>
