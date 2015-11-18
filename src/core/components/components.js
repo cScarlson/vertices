@@ -72,21 +72,20 @@
         return this;
     };
 
-    var Popup = function Popup($) {  // TODO: Note, $alert, $prompt & $confirm (etc) should extend Popup
+    var Popup = function Popup() {
         var thus = this;
 
-        function initialize() {
-            $.css({
-                display: 'none'
-            });
+        function noop() { }
 
-            // on 'ui>$alert' -> fire 'ui>$backdrop:show'
+        function initialize() {
+            this.doInit();
         }
 
         function destroy() { }
 
         // export precepts
         this.init = initialize;
+        this.doInit = noop;
         this.destroy = destroy;
 
         return this;
@@ -116,21 +115,21 @@
         var thus = this;
 
         function initialize() {
-            $.css({
-                display: 'none'
-            });
+            $.hide();
 
             // on 'ui>$alert' -> fire 'ui>$backdrop:show'
+            // Alert.prototype.init();
         }
 
         function destroy() { }
 
         // export precepts
-        this.init = initialize;
+        this.doInit = initialize;
         this.destroy = destroy;
 
         return this;
     };
+    Alert.prototype = new Popup();
 
     var Modal = function Modal($) {
         var thus = this;

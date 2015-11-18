@@ -816,7 +816,7 @@
             this.Director = Director;
             this.director = new Director(sandbox);
             this.log(1, "INITIALIZING DIRECTOR");
-            this.director.init();
+            this.director.init();  // calls this.init as Director.prototype === this. Uses Template Method Pattern
             this.register_director = this.noop;
             
             return this;
@@ -846,13 +846,16 @@
         function registerService(Service) {
             var id = this.generate_uuid();
             var sandbox = new function Utils() { }, instance;
-            // this.$installTo(Service.prototype);
+            sandbox.settings = this.settings[Service.name];
+            sandbox.http = this.http;
+            this.$installTo(Service.prototype);
             instance = new Service(sandbox);
             this.modules[id] = {
                 Module: Service,
                 id: id,
                 instances: [instance]
             };
+            instance.init(sandbox);
 
             return this;
         }
@@ -967,7 +970,8 @@
               , hasBehavior = $root.is(scopeSelector)
               ;
             var slug = $root.attr('data-behavior')
-              , moduleIds = $.unique(slug.replace(/^[,;\s]+|[,;\s]+$/g, '').replace(/[,;\s]+/g, '|').replace(/[|]+$/g, '').split('|')).sort()
+              , formattedSlug = slug && slug.replace(/^[,;\s]+|[,;\s]+$/g, '').replace(/[,;\s]+/g, '|').replace(/[|]+$/g, '') || ''
+              , moduleIds = $.unique(formattedSlug.split('|')).sort()
               , scopeId = moduleIds.join(' ')
               ;
             var childMedium = medium.$spawn(new function ChildScope() { this.element = root; });
@@ -991,9 +995,10 @@
 
         }
 
-        function initialize() {
+        function initialize(selector) {
             var thus = this;
-            var $root = $('html');
+            var selector = selector || 'html'
+              , $root = $(selector);
 
             this.log(1, "INITIALIZING CORE");
 
@@ -1002,8 +1007,13 @@
                 thus.arm($root[0], thus);
             });
 
+            this.doInit();
+
+            return this;
         }
         
+        function doInitialize(hookMethod) { }
+
         // export precepts
         Debugger.apply(this);
         Utilities.apply(this);
@@ -1036,6 +1046,7 @@
         this.stop_all = stopAll;
         this.arm = autoRegisterModules;
         this.init = initialize;
+        this.doInit = doInitialize;
 
         return this;
     };
@@ -1120,7 +1131,7 @@
               ;
 
             if (instantiative) {
-                return new Vertices(new Core());
+                return (new Vertices(new Core()))('$SANDBOX', CORE.Sandbox)('$APP', args[0]);
             }
 
             if (id) {  // TODO: abstract the Module vs value conditions

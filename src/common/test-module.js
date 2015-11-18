@@ -59,15 +59,26 @@ V('doc', function Doc($) {
 });
 
 
-V(function Service() {
-    var thus = this;
+V(function Service(utils) {
+    var thus = this
+      , http = utils.http;
 
-    console.log('@Service #construct', this);
+    console.log('@Service #construct', this, utils, http);
 
     function initialize() {
         console.log('@Service #init', this);
+        this.$on('test', function (e, data) {
+            console.log('@Service #test', data);
+        });
+        setTimeout(function () {
+            thus.$trigger('test', { "|": "|" });
+        }, (1000 * 2));
     }
     function destroy() { }
+
+    // export
+    this.init = initialize;
+    this.destroy = destroy;
 
     return this;
 });
