@@ -30,7 +30,25 @@
     </script>
 </head>
 <body>
-    <div data-behavior="$alert">asdfasdfasdf</div>
+    <ul>
+        <li class="hide" data-behavior="$repeat">
+            <script type="application/json">
+                {
+                "data": [
+                        { "firstName": "Jonathan", "lastName": "Chapman", "message": "Have an apple?" },
+                        { "firstName": "Brad", "lastName": "Pitt", "message": "Watch out for zombies!" },
+                        { "firstName": "Kevin", "lastName": "Bacon", "message": "You know me?" }
+                    ]
+                }
+            </script>
+            {firstName} {lastName}
+            <br />
+            {message}
+        </li>
+    </ul>
+    <div data-behavior="$backdrop"></div>
+    <div data-behavior="$alert"></div>
+
 
     <span>DOC</span>
 

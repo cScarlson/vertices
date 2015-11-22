@@ -136,6 +136,45 @@ Vertices.register('$SANDBOX', function Sandbox(core, module_selector, element) {
             return this;
         }
 
+        function innerWidth() {
+            return core.dom.get_inner_width(this.context);
+        }
+        function innerHeight() {
+            return core.dom.get_inner_height(this.context);
+        }
+
+        function width(value) {
+
+            if (!value && value !== 0) {
+                return core.dom.get_width(this.context);
+            } else {
+                core.dom.set_width(this.context, value);
+            }
+
+            return this;
+        }
+        function height(value) {
+
+            if (!value && value !== 0) {
+                return core.dom.get_height(this.context);
+            } else {
+                core.dom.set_height(this.context, value);
+            }
+
+            return this;
+        }
+
+        function outerWidth(includeMargins) {
+            var args = Array.prototype.slice.call(arguments, 0);
+            args.unshift(this.context);
+            return core.dom.get_outer_width.apply(core.dom, args);
+        }
+        function outerHeight(includeMargins) {
+            var args = Array.prototype.slice.call(arguments, 0);
+            args.unshift(this.context);
+            return core.dom.get_outer_height.apply(core.dom, args);
+        }
+
         function offset() {
             //TODO: we may want to accept an arg to set the offset, but I don't need that now.
             return core.dom.offset(this.context);
@@ -198,6 +237,11 @@ Vertices.register('$SANDBOX', function Sandbox(core, module_selector, element) {
         this.toString = toString;
         this.scrollTo = scrollTo;
         this.offset = offset;
+        this.innerWidth = innerWidth;
+        this.innerHeight = innerHeight;
+        this.width = width;
+        this.height = height;
+        this.outerWidth = outerWidth;
         this.outerHeight = outerHeight;
         this.serialize = serialize;
         this.comboBox = comboBox;
@@ -320,6 +364,10 @@ Vertices.register('$SANDBOX', function Sandbox(core, module_selector, element) {
             return core.remove_cookie.apply(core, arguments);
         }
 
+        function repeatTemplate(element, collection) {
+            return core.template_repeat.call(core, element, collection);
+        }
+
         // export
         this.createElement = createElement;
         this.extend = extend;
@@ -328,6 +376,7 @@ Vertices.register('$SANDBOX', function Sandbox(core, module_selector, element) {
         this.debounce = debounce;
         this.cookie = cookie;
         this.removeCookie = removeCookie;
+        this.repeat = repeatTemplate;
 
         return this;
     };

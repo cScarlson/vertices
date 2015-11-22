@@ -144,7 +144,7 @@
                 object.$publish = publish;
                 object.$on = on;
                 object.$trigger = trigger;
-                object.$installTo = installTo;
+                object.$split = split;
 
                 return object;
             }
@@ -198,6 +198,7 @@
             this.$fire = fire;
             this.$emit = emit;
             this.$broadcast = broadcast;
+            this.$split = split;
             this.$installTo = installTo;
             this.$spawn = spawn;
 
@@ -247,6 +248,59 @@
             this.trigger_event = trigger_event;
             this.remove_events = remove_events;
             this.install_to = install_to;
+
+            return this;
+        };
+
+        var TemplateRepeat = function TemplateRepeat(_template, collection, interpolate, uuid) {
+            var $template = jQuery(_template)
+              , tmpl = __template($template)
+              , uuid = uuid || $template.data('uuid') || (+Date())
+              , selector = interpolate('[data-uuid="{uuid}"]')({ uuid: uuid })
+              ;
+
+            function __template($node) {
+                return ($node && $node[0]) && $node[0].outerHTML;
+            }
+
+            function __compileNode(object) {
+                var html = interpolate(tmpl)(object);
+                $template.before($(html).attr('data-uuid', uuid).removeClass('tmpl'));
+            }
+
+            function clear() {
+                $template.siblings(selector).remove();
+                return this;
+            }
+
+            function append(collection) {
+                return new TemplateRepeat(_template, collection, interpolate, uuid);
+            }
+
+            function update(collection) {
+                return this.clear().append(collection);
+            }
+
+            function show() {
+                var $siblings = $template.siblings(selector);
+                $siblings.show.apply($siblings, arguments);
+                return this;
+            }
+
+            function hide() {
+                var $siblings = $template.siblings(selector);
+                $siblings.hide.apply($siblings, arguments);
+                return this;
+            }
+
+            collection.forEach(__compileNode);
+
+            // export precepts
+            this.clear = clear;
+            this.append = append;
+            this.update = update;
+            this.show = show;
+            this.hide = hide;
 
             return this;
         };
@@ -622,6 +676,39 @@
                 return this;
             }
 
+            function getInnerWidth(element) {
+                var $el = jQuery(element);
+                return $el.innerWidth();
+            }
+            function getInnerHeight(element) {
+                var $el = jQuery(element);
+                return $el.innerHeight();
+            }
+
+            function getWidth(element) {
+                return jQuery(element).width();
+            }
+            function setWidth(element, arg) {
+                jQuery(element).width(arg);
+                return this;
+            }
+            function getHeight(element) {
+                return jQuery(element).height();
+            }
+            function setHeight(element, arg) {
+                jQuery(element).height(arg);
+                return this;
+            }
+
+            function getOuterWidth(element, includeMargin) {
+                var $el = jQuery(element), args = Array.prototype.slice.call(arguments, 1);
+                return $el.innerWidth.apply($el, args);
+            }
+            function getOuterHeight(element, includeMargin) {
+                var $el = jQuery(element), args = Array.prototype.slice.call(arguments, 1);
+                return $el.innerHeight.apply($el, args);
+            }
+
             function serializeForm(element) {
                 return jQuery(element).serialize();
             }
@@ -692,7 +779,6 @@
             }
 
 
-
             // export precepts
             this.query = query;
             this.bind = bind;
@@ -712,6 +798,14 @@
             this.set_value = setValue;
             this.get_style = getStyle;
             this.set_styles = setStyles;
+            this.get_inner_width = getInnerWidth;
+            this.get_inner_height = getInnerHeight;
+            this.get_width = getWidth;
+            this.set_width = setWidth;
+            this.get_height = getHeight;
+            this.set_height = setHeight;
+            this.get_outer_width = getOuterWidth;
+            this.get_outer_height = getOuterHeight;
             this.serialize_form = serializeForm;
             this.animate = animate;
             this.offset = offset;
@@ -848,7 +942,7 @@
             var sandbox = new function Utils() { }, instance;
             sandbox.settings = this.settings[Service.name];
             sandbox.http = this.http;
-            this.$installTo(Service.prototype);
+            this.$split(Service.prototype);
             instance = new Service(sandbox);
             this.modules[id] = {
                 Module: Service,
@@ -963,6 +1057,12 @@
             return this;
         }
 
+        function templateRepeat(template, collection) {
+            var uuid = jQuery(template).data('uuid') || this.generate_uuid();
+            console.log('\n\n', uuid);
+            return new TemplateRepeat(template, collection, this.interpolate, uuid);
+        }
+
         function autoRegisterModules(root, medium) {
             var scopeSelector = '[data-behavior]'
               , $root = $(root)
@@ -1044,6 +1144,7 @@
         this.stop = stop;
         this.start_all = startAll;
         this.stop_all = stopAll;
+        this.template_repeat = templateRepeat;
         this.arm = autoRegisterModules;
         this.init = initialize;
         this.doInit = doInitialize;
