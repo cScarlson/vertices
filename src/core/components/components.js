@@ -9,9 +9,16 @@
     if (undefined) return;
     var ENV = this;
 
-    /* ================================================================
+    /* ================================================================================================================================
        TODO: Only expose necessary Classes to environment
-     * ================================================================ */
+       NOTE: Theoretically, Sandbox could be absolved with the replacement of Decorators of, say:
+            * Layout: Width, Height, OuterXY, InnerXY, etc
+            * Animation: Slide, Fade, Bounce, etc
+            * DOM: Select $(), Find, Each, etc
+            * Notifications: Notify, Listen, Ignore, etc
+            * Utilities: Interpolate, Extend, etc
+            However, Decorators must have a means of manipulating & modifying; a basic Sandbox is necessary.
+     * ================================================================================================================================ */
 
 
     var Configurable = function Configurable($) {
@@ -34,8 +41,6 @@
 
         return this;
     };
-
-
 
 
     /* BACKDROP */
@@ -319,6 +324,14 @@
 
         return this;
     });
+
+    V('Test0', function Test0($) {
+        this.init = $.noop;
+        this.destroy = $.noop;
+        return this;
+    });
+
+    V('Test0');
 
     ENV['Configurable'] = Configurable;
 

@@ -1,6 +1,6 @@
 ﻿
 
-V('doc', { data: 'for Doc()' })('docs', 'DOCUMENTS');
+V.value('doc', { data: 'for Doc()' }).value('docs', 'DOCUMENTS');
 
 
 V('doc', function Doc($) {

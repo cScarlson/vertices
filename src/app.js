@@ -3,7 +3,7 @@
  * @ Intent: Extends Core for proprietary, Dependency-Inversive control for dynamic runtime logic, encapsulation of Root-Scope logic,
  * *         and management low-level MLC/security along with any other complexity of its suprastructure.
  */
-;Vertices({
+;Vertices.config({
     rootSettings: true,
     myValue: 'yes',
     Service: {
@@ -12,8 +12,7 @@
             search: '/my-server/search'
         }
     }
-});
-;Vertices.register('$APP', function ApplicationDirector($) {
+}).director(function ApplicationDirector($) {
     var thus = this;
     var channels = {
         core: {
@@ -74,42 +73,49 @@
 
 
 
-var mod = new V(function DisparateDirector($) {
-    var thus = this;
+//var mod = new V(function DisparateDirector($) {
+//    var thus = this;
 
-    function initialize() {
-        console.log('@DisparateDirector', $);
-        DisparateDirector.prototype.init('body');  // ALERT! Override .init and manually start prototype to customize selector!
-    }
+//    function initialize() {
+//        console.log('@DisparateDirector', $);
+//        DisparateDirector.prototype.init('body');  // ALERT! Override .init and manually start prototype to customize selector!
+//    }
 
-    this.init = initialize;
+//    this.init = initialize;
 
-    return this;
-});
+//    return this;
+//});
 
-mod('test', function Test($) {
-    var thus = this;
+//mod('test', function Test($) {
+//    var thus = this;
 
-    function init() {
-        //console.log('????', $);
-        //$.context.innerHTML = 'Test';
-        this.$on('test', function (e, data) {
-            console.log('#test', $.context[0]);
-        });
-        $.addEvent('click', function (e) {
-            thus.$fire('test', { "": "" });
-            //console.log('click', e);
-        });
-    }
+//    function init() {
+//        //console.log('????', $);
+//        //$.context.innerHTML = 'Test';
+//        this.$on('test', function (e, data) {
+//            console.log('#test', $.context[0]);
+//        });
+//        $.addEvent('click', function (e) {
+//            thus.$fire('test', { "": "" });
+//            //console.log('click', e);
+//        });
+//    }
 
-    function destroy() { }
+//    function destroy() { }
 
-    // export precepts
-    this.init = init;
-    this.destroy = destroy;
+//    // export precepts
+//    this.init = init;
+//    this.destroy = destroy;
 
-    return this;
-});
+//    return this;
+//});
+
+//mod.director(function Dir() {
+
+//    this.do_init = function () { };
+//    this.destroy = this.do_init;
+
+//});
 
 
 //V.data({  // equivalent: V['data' | null]('$APP', { ... })
