@@ -335,13 +335,9 @@
             if (id) {  // TODO: abstract the Module vs value conditions
                 if (Module) {
                     method = 'component';
-                } else {  // if value
-                    method = 'value';
                 }
             } else if (Module) {
                 method = 'service';
-            } else {  // if config
-                method = 'config';
             }
 
             return this[method].apply(this, args);
