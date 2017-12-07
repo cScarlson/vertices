@@ -1,129 +1,389 @@
-﻿/**
- * Application Director
- * @ Intent: Extends Core for proprietary, Dependency-Inversive control for dynamic runtime logic, encapsulation of Root-Scope logic,
- * *         and management low-level MLC/security along with any other complexity of its suprastructure.
- */
-;Vertices.config({
-    rootSettings: true,
-    myValue: 'yes',
-    Service: {
-        conventionOverConfiguration: true,
-        endpoints: {
-            search: '/my-server/search'
-        }
-    }
-}).director(function ApplicationDirector($) {
-    var thus = this;
-    var channels = {
-        core: {
-            '$core://created/module': moduleCreatedHandler,
-            '$core://stopped/module': moduleStoppedHandler
-        },
-        app: {
-            hashchange: {
-                'core>window.location.hash:change': hashChangeHandler
-            }
-        }
+
+// IoT
+;(function () {
+    'use strict';
+    
+    // var wifi = new function Wifi() {
+    //     this.connect = function c() {};
+    // };
+    // var bluetooth = new function Bluetooth() {
+    //     this.connect = function c() {};
+    // };
+    // var file = new function File() {
+    //     this.read = function c() {};
+    // };
+    
+    
+    // var Utils = function Utils() {
+    //     this.debounce = new Function();
+    //     this.http = { get: new Function() };
+    // };
+    
+    
+    // var ComponentSandbox = function ComponentSandbox(module) {
+    //     this.connect = function c() { module.connect.apply(module, arguments); return this; };
+    // };
+    // var ServiceSandbox = function ServiceSandbox(utils) {
+    //     this.connect = function c() {};
+    // };
+    // var DirectorSandbox = function DirectorSandbox(services) {
+    //     this.read = function c() {};
+    // };
+    
+    
+    // var decorators = {
+    //     components: ComponentSandbox,
+    //     services: ServiceSandbox,
+    //     director: DirectorSandbox,
+    // };
+    
+    // var configuration = {
+    //     targets: [ wifi, bluetooth, file ],
+    //     map: map,
+    //     decorators: decorators,
+    //     utils: new Utils(),
+    // };
+    
+    // function map(modules) {
+    //     modules.forEach(function m(module) {
+            
+    //     });
+    // }
+    
+    // V.config(configuration);
+    // // var V = new V(configuration);
+    
+})();
+
+// DOM
+;(function () {
+    'use strict';
+    // ATTENTION!
+    // TODO: Design better Configuration and better Bootstrapping
+    
+    var Utils = function Utils() {
+        this.debounce = new Function();
+        this.timeout = setTimeout.bind(window);
     };
-
-    function init() {
-        this.register_events(channels.core);
-
-        $.addEvent('hashchange', onHashChange).listen(channels.app.hashchange);
-        this.$on('test', function (e, data) {
-            console.log('@APP#test', this, $.context[0]);
-        });
-
+    
+    
+    var EventHub = function EventHub($) {
+        var thus = this;
+        
+        function publish(channel) {
+            $.publish.apply($, arguments);
+            return this;
+        }
+        
+        function subscribe(channel, handler) {
+            $.subscribe.apply($, arguments);
+            return this;
+        }
+        
+        // export precepts
+        this.channels = $.channels;
+        this.publish = publish;
+        this.subscribe = subscribe;
+        
+        return this;
+    };
+    
+    var ComponentSandbox = function ComponentSandbox($) {
+        var thus = this;
+        var element = $.element, director = $.director;
+        var $el = new jQuery(element);
+        
+        function publish(channel) {
+            director.publish.apply(director, arguments);
+            return this;
+        }
+        
+        function subscribe(channel, handler) {
+            director.subscribe.apply(director, arguments);
+            return this;
+        }
+        
+        function css() {
+            $el.css.apply($el, arguments);
+            return this;
+        }
+        
+        // export precepts
+        EventHub.call(this, director);
+        this.id = element.id;
+        this.css = css;
+        
+        return this;
+    };
+    var ServiceSandbox = function ServiceSandbox($) {
+        var thus = this;
+        var http = $.http, director = $.director;
+        
+        // export precepts
+        EventHub.call(this, director);
+        
+        return this;
+    };
+    var DirectorSandbox = function DirectorSandbox(services) {
+        var services = services || [];
+        
+        function start(sandbox, data) {
+            var Service = data.Constructor;
+            // ... _configuration.decorators.services
+        }
+        
+        function init(sandbox) {
+            for (var id in this.services) {
+                var data = this.services[id];
+                this.start(sandbox, data);
+            }
+            return this;
+        }
+        
+        // export precepts
+        this.services = services;
+        this.init = init;
+        
+        return this;
+    };
+    
+    
+    var decorators = {
+        components: ComponentSandbox || 'ComponentSandbox',  // Hard or soft reference
+        services: ServiceSandbox || 'ServiceSandbox',  // Hard or soft reference
+        director: DirectorSandbox || 'DirectorSandbox',  // Hard or soft reference
+        all: 'EventHub'  // Hard or soft reference
+    };
+    
+    var configuration = {
+        target: document,
+        bootstrap: bootstrap,
+        decorators: decorators,
+    };
+    
+    function bootstrap($, element) {
+        var element = element;
+        var selector = '[data-behavior]';
+        var data = element.dataset || {};
+        var ex = /[\s]+/img;
+        var slug = data.behavior || element.v || '';
+        var components = slug.split(ex);
+        var children = element.children;// element.querySelectorAll(selector);
+        (this, document, data, slug, components, children);
+        
+        var resolveScope = function resolveScope(parent, child) {
+            var isDirectDescendant = (child.parentNode === parent);
+            (this, parent, child, isDirectDescendant);
+            if (isDirectDescendant) bootstrap.call(this, $, child);
+        }.bind(this, element);
+        
+        // components.forEach(this.mount.bind(this, element));
+        // Array.prototype.forEach.call(children, resolveScope);
+        
+        // ... or? ...
+        
+        Array.prototype.forEach.call(children, resolveScope);  // TODO: Optimize!!!
+        if (!!slug) components.forEach(this.mount.bind(this, element));
     }
+    
+    V.config(configuration);
+    // var V = new V(configuration);
+    // V(ComponentSandbox)(ServiceSandbox)(DirectorSandbox);  // Hard or soft reference
+    
+    
+    V.director(function Director(services) {
+        var thus = this;
+        var channels = {
+            'SOMETHING:CHANGED': 'something/changed'
+        };
+        var handlers = {
+            'something/changed': handleSomethingChanged.bind(this),
+        };
+        
+        function init() {
+            Director.prototype.init();
+            return this;
+        }
+        
+        function publish(channel) {
+            var args = Array.prototype.slice.call(arguments, 0);
+            args.unshift(this.hub);
+            this.utils.timeout(this.hub.publish.bind.apply(this.hub.publish, args), 0);
+            // hack (component.init() needs to happen in parallel after boostrap)
+            
+            return this;
+        }
+        function subscribe(channel, handler) {
+            this.hub.subscribe.apply(this.hub, arguments);
+            return this;
+        }
+        
+        // HANDLERS
+        function handleSomethingChanged() {}
+        
+        // export precepts
+        this.channels = channels;
+        this.init = init;
+        this.publish = publish;
+        this.subscribe = subscribe;
+        
+        return this;
+    });
+    
+    V('document', function DocumentComponent($) {
+        var thus = this;
+        
+        function init(data) {
+            console.log('#DocumentComponent #init', $);
+            $.subscribe($.channels['SOMETHING:CHANGED'], function t(e, data) {
+                console.log('#document', e, data);
+            });
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    V('test', function TestComponent($) {
+        var thus = this;
+        
+        function init(data) {
+            // console.log('#TestComponent #init', $);
+            $.publish($.channels['SOMETHING:CHANGED'], $.id);
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    V('example', function ExampleComponent($) {
+        var thus = this;
+        
+        function init(data) {
+            console.log('#ExampleComponent #init', $);
+            $.css({ background: 'orangered' });
+            $.subscribe($.channels['SOMETHING:CHANGED'], function t(e, data) {
+                console.log('#example', e, data);
+            });
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    Utils.call(V.utils);
+    window.onload = V.bootstrap.bind(V, configuration);
+    
+})();
 
-    function moduleCreatedHandler(mod) {
-        // this.log(mod); -- OR -- Rather, $.notify({ type: 'log://[my-log-level]', data: mod.id });
-    }
 
-    function moduleStoppedHandler(mod) {
-        // this.log(mod); -- OR -- Rather, $.notify({ type: 'log://[my-log-level]', data: mod.id });
-    }
+// DOM
+;(function iif() {
+    
+    
+    var Utils = function Utils() {
+        this.debounce = new Function();
+        this.timeout = setTimeout.bind(window);
+    };
+    
+    var EventHub = function EventHub() {
+        var thus = this;
+        var channels = { };
+        
+        function publish(channel) {
+            console.log('publish', arguments);
+            return this;
+        }
+        
+        function subscribe(channel, handler) {
+            console.log('subscribe', arguments);
+            return this;
+        }
+        
+        function unsubscribe(channel, handler) {
+            console.log('unsubscribe', arguments);
+            return this;
+        }
+        
+        // export precepts
+        this.channels = channels;
+        this.publish = publish;
+        this.subscribe = subscribe;
+        this.unsubscribe = unsubscribe;
+        
+        return this;
+    };
+    
+    var Director = function Director() {
+        var thus = this;
+        var hub = new EventHub();
+        var channels = {
+            'DATA:CHANGED': 'data/changed'
+        };
+        var publishers = {
+            'data/changed': handleDataChanged.bind(this),
+        };
+        
+        function publish() {
+            // hub.publish.apply();
+        }
+        // ... subscribe() unsubscribe()
+        
+        // export precepts
+        this.publish = publish;
+        
+        return this;
+    };
+    
+    var Sandbox = function Sandbox(director) {
+        var thus = this;
+        
+        // export precepts
+        // ...
+        
+        return this;
+    };
+    
+    V.config({
+        selector: '[data-behavior]',
+        target: document,
+        bootstrap: function bootstrap(target) {
+            var element = target;
+            var selector = this.selector;
+            var data = element.dataset || {};
+            var ex = /[\s]+/img;
+            var slug = data.behavior || element.v || '';
+            var components = slug.split(ex);
+            var children = element.children;// element.querySelectorAll(selector);
+            (this, document, data, slug, components, children);
+            
+            var resolveScope = function resolveScope(parent, child) {
+                var isDirectDescendant = (child.parentNode === parent);
+                (this, parent, child, isDirectDescendant);
+                if (isDirectDescendant) bootstrap.call(this, child);
+            }.bind(this, element);
+            
+            // components.forEach(this.bootstrap.bind(this, element));
+            // Array.prototype.forEach.call(children, resolveScope);
+            
+            // ... or? ...
+            
+            Array.prototype.forEach.call(children, resolveScope);  // TODO: Optimize!!!
+            if (!!slug) components.forEach(this.bootstrap.bind(this, element));
+        },
+        decorators: {
+            components: ComponentSandbox
+        },
+    });
+    
+})();
 
-    function onHashChange(e) {
-        var originalEvent = e.originalEvent
-          , oldURL = originalEvent.oldURL
-          , newURL = originalEvent.newURL
-          , oldComponents = thus.parse_uri(oldURL)
-          , newComponents = thus.parse_uri(newURL);
-
-        $.notify({ type: 'core>window.location.hash:change', data: { oldURL: oldComponents, newURL: newComponents } });
-    }
-
-    function hashChangeHandler(data) {
-        // data.oldURL.hash, data.newURL.href, ...
-    }
-
-    function destroy() {
-        // this.stop_all();
-        this.remove_events(channels.core);
-    }
-
-    // export precepts
-    this.doInit = init;
-    this.destroy = destroy;
-
-    return this;
-});
-
-
-
-/*
-var mod = new V(function DisparateDirector($) {
-    var thus = this;
-
-    function initialize() {
-        console.log('@DisparateDirector', $);
-        DisparateDirector.prototype.init('body');  // ALERT! Override .init and manually start prototype to customize selector!
-    }
-
-    this.init = initialize;
-
-    return this;
-});
-
-mod('test', function Test($) {
-    var thus = this;
-
-    function init() {
-        //console.log('????', $);
-        //$.context.innerHTML = 'Test';
-        this.$on('test', function (e, data) {
-            console.log('#test', $.context[0]);
-        });
-        $.addEvent('click', function (e) {
-            thus.$fire('test', { "": "" });
-            //console.log('click', e);
-        });
-    }
-
-    function destroy() { }
-
-    // export precepts
-    this.init = init;
-    this.destroy = destroy;
-
-    return this;
-});
-
-mod.director(function Dir() {
-
-    this.do_init = function () { };
-    this.destroy = this.do_init;
-
-});
-*/
-
-
-//V.data({  // equivalent: V['data' | null]('$APP', { ... })
-//    app: 'configs'
-//});
-
-//V('person', {
-//    name: 'Name not found',
-//    height: '6`2'
-//});
