@@ -1,8 +1,63 @@
 
+;(function save() {
+    function defaultBootstrap(root, medium) {
+        var scopeSelector = '[data-behavior]'
+          , $root = $(root)
+          , $parent = $root.find(scopeSelector)
+          , hasBehavior = $root.is(scopeSelector)
+          ;
+        var slug = $root.attr('data-behavior')
+          , formattedSlug = slug && slug.replace(/^[,;\s]+|[,;\s]+$/g, '').replace(/[,;\s]+/g, '|').replace(/[|]+$/g, '') || ''
+          , moduleIds = $.unique(formattedSlug.split('|')).sort()
+          , scopeId = moduleIds.join(' ')
+          ;
+        var childMedium = medium.$spawn(new function ChildScope() { this.element = root; });
+        
+
+        var resolveBehavior = function resolveBehavior(scope, behavior, i, a) {
+            var scope = ($root.is('html')) ? document : scope;
+            this.start(behavior, scope, scopeId, childMedium);
+        }.bind(this, $root[0]);
+
+        var resolveChildren = function resolveChildren(i, scope) {
+            var $firstScope = $(scope);
+            if (!$($firstScope.parent()).is($parent)) {
+                autoRegisterModules.call(this, $firstScope, childMedium);
+            }
+
+        }.bind(this);
+
+        moduleIds.forEach(resolveBehavior);
+        $parent.each(resolveChildren);
+
+    }
+})();
+
 ;(function (undefined) {
     'use strict';
     if (undefined) return;
     var ENV = this || {};
+    
+    var utils = new function Utils() {
+        
+        function extend(target) {
+            var objects = Array.prototype.slice.call(arguments, 1);
+            var object = objects.shift(), args = [target].concat(objects);
+            
+            for (var key in object) {
+                var value = object[key];
+                if ({ 'Object': true }[value.constructor.name]) extend(target[key], value);
+                else target[key] = value;
+            }
+            
+            if (!objects.length) return target;
+            return extend.apply(this, args);
+        }
+        
+        // export precepts
+        this.console = window.console;
+        this.extend = extend;
+    };
     
     var Core = function Core($) {
         var thus = this;
@@ -10,40 +65,35 @@
         var _services = { };
         var _components = { };
         var _configuration = {  // ... defaults
-            bootstrap: function defaultBootstrap(root, medium) {
-                var scopeSelector = '[data-behavior]'
-                  , $root = $(root)
-                  , $parent = $root.find(scopeSelector)
-                  , hasBehavior = $root.is(scopeSelector)
-                  ;
-                var slug = $root.attr('data-behavior')
-                  , formattedSlug = slug && slug.replace(/^[,;\s]+|[,;\s]+$/g, '').replace(/[,;\s]+/g, '|').replace(/[|]+$/g, '') || ''
-                  , moduleIds = $.unique(formattedSlug.split('|')).sort()
-                  , scopeId = moduleIds.join(' ')
-                  ;
-                var childMedium = medium.$spawn(new function ChildScope() { this.element = root; });
+            selector: '[v]',
+            target: document,
+            bootstrap: function defaultBootstrap(target) {
+                var element = target;
+                var selector = this.selector;
+                var data = element.dataset || {};
+                var ex = /[\s]+/img;
+                var slug = data.behavior || element.v || '';
+                var components = slug.split(ex);
+                var children = element.children;// element.querySelectorAll(selector);
+                (this, document, data, slug, components, children);
                 
-    
-                var resolveBehavior = function resolveBehavior(scope, behavior, i, a) {
-                    var scope = ($root.is('html')) ? document : scope;
-                    this.start(behavior, scope, scopeId, childMedium);
-                }.bind(this, $root[0]);
-    
-                var resolveChildren = function resolveChildren(i, scope) {
-                    var $firstScope = $(scope);
-                    if (!$($firstScope.parent()).is($parent)) {
-                        autoRegisterModules.call(this, $firstScope, childMedium);
-                    }
-    
-                }.bind(this);
-    
-                moduleIds.forEach(resolveBehavior);
-                $parent.each(resolveChildren);
-    
+                var resolveScope = function resolveScope(parent, child) {
+                    var isDirectDescendant = (child.parentNode === parent);
+                    (this, parent, child, isDirectDescendant);
+                    if (isDirectDescendant) bootstrap.call(this, child);
+                }.bind(this, element);
+                
+                // components.forEach(this.bootstrap.bind(this, element));
+                // Array.prototype.forEach.call(children, resolveScope);
+                
+                // ... or? ...
+                
+                Array.prototype.forEach.call(children, resolveScope);  // TODO: Optimize!!!
+                if (!!slug) components.forEach(this.bootstrap.bind(this, element));
             },
             decorators: {
-                components: function DefaultComponentSandbox(element) { return element; },
                 services: function DefaultServicesSandbox(utils) { return utils; },
+                components: function DefaultComponentSandbox(element) { return element; },
             }
         };
         
@@ -86,7 +136,6 @@
                   , sandbox = new ServiceSandbox(utils)
                   , service = new Service(sandbox)
                   ;
-                // x[id] = service;
                 service.init();
             }
             
@@ -98,7 +147,7 @@
          */
         function bootstrap(element, id) {
             if (!id || !element) return this;
-            if (!_components[id]) return this;
+            if (!_components[id]) return utils.console.warn("Unregistered Component: " + id);
             
             var config = _configuration
               , decorators = config.decorators
@@ -108,8 +157,9 @@
               , Component = _component.Constructor
               , sandbox = new ComponentSandbox(element)
               , component = new Component(sandbox)
+              , data = element.dataset || { }
               ;
-            component.init(element.dataset);
+            component.init(data);
             
             return this;
         }
@@ -140,6 +190,10 @@
     var Facade = function Facade(core) {
         var thus = this;
         
+        function configure() {
+            core.configure.apply(core, arguments);
+            return this;
+        }
         function service(Service) {
             core.registerService.apply(core, arguments);
             return this;
@@ -157,8 +211,9 @@
             
             return this;
         }
-        function configure() {
-            core.configure.apply(core, arguments).init();
+        
+        function bootstrap() {
+            core.init();
             return this;
         }
         
@@ -176,17 +231,16 @@
     /**
      * API
      */
-    var Vertex = new (function Vertices(Core, Facade, Utils) {
-        var utils = new Utils();
+    var Vertex = new (function Vertices(Core, Facade, utils) {
         var $ = { utils: utils };
         
         var V = Facade.call(function V() {
-            if (this instanceof V) return ( new Vertices(Core, Facade, Utils) );
+            if (this instanceof V) return ( new Vertices(Core, Facade, utils) );
             return V.register.apply(V, arguments);
         }, new Core($));
         
         return V;
-    })(Core, Facade, this.Utils);
+    })(Core, Facade, utils);
     
     ENV['V'] = ENV['Vertices'] = Vertex;
 }).call(this);
