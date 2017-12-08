@@ -136,12 +136,7 @@
         // export precepts
         Sandbox.call(this, director);
         this.utils = utils;
-        this.http = new function HTTP() {
-            this.get = new Function();
-            this.post = new Function();
-            this.put = new Function();
-            this.delete = new Function();
-        };
+        this.http = jQuery.ajax.bind(jQuery);
         
         return this;
     };
