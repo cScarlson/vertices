@@ -6,7 +6,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": { },
+  "dependencies": {
+    "jquery": "^3.2.1"
+  },
   "devDependencies": {
     "statik": "^1.4.6"
   },

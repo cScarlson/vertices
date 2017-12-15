@@ -40,7 +40,7 @@
         <li class="hide" data-behavior="$repeat">
             <script type="application/json">
                 {
-                "data": [
+                    "data": [
                         { "firstName": "Jonathan", "lastName": "Chapman", "message": "Have an apple?" },
                         { "firstName": "Brad", "lastName": "Pitt", "message": "Watch out for zombies!" },
                         { "firstName": "Kevin", "lastName": "Bacon", "message": "You know me?" }
@@ -106,14 +106,29 @@
         </div>
 
     </div>
+    
+    <!-- Contept -->
+    <script src="app/app.html" type="text/html" data-behavior="include" data-src="app/app.html"></script>
+    <!-- <link rel="import" href="app/app.html" v="some-component" /> --> <!-- Proper way? Only works in Chrome -->
+    <!-- <script>  // https://www.html5rocks.com/en/tutorials/webcomponents/imports/#includejs
+        var link = document.querySelector('link[rel="import"]');
+        var content = link.import;
+    
+        // Grab DOM from warning.html's document.
+        var el = content.querySelector('.app');
+    
+        // document.body.appendChild(el.cloneNode(true));
+        link.outerHTML = el.outerHTML;
+      </script> -->
+    <!-- Can this be done using JSONP? -->
 
     <br /><br /><br />
     
 
     <!--<div data-behavior="$include">core/components/components.html</div>-->
     
-    <script src="____core/jquery-2.1.4.js"></script>
+    <script src="lib/jquery.js"></script>
     <script src="core/core.js"></script>
-    <script src="app.js"></script>
+    <script src="app/app.js"></script>
 </body>
 </html>

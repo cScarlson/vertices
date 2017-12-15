@@ -46,6 +46,7 @@
             
             for (var key in object) {
                 var value = object[key];
+                target[key] = target[key] || { };
                 if ({ 'Object': true }[value.constructor.name]) extend(target[key], value);
                 else target[key] = value;
             }
@@ -54,146 +55,146 @@
             return extend.apply(this, args);
         }
         
-                function escapeHTML(s) {
-                    return s.replace(/[&"<>]/g, function (c) {
-                        return {
-                            '&': '&amp;',
-                            '"': '&quot;',
-                            '<': '&lt;',
-                            '>': '&gt;'
-                        }[c];
-                    });
-                }
+        function escapeHTML(s) {
+            return s.replace(/[&"<>]/g, function (c) {
+                return {
+                    '&': '&amp;',
+                    '"': '&quot;',
+                    '<': '&lt;',
+                    '>': '&gt;'
+                }[c];
+            });
+        }
+
+        /**
+         * @ THX: Douglas Crockford (String.prototype.supplant)
+         * @ INTERPOLATE
+         */
+        function interpolate(str) {
+            return function interpolate(o) {
+                return str.replace(/{([^{}]*)}/g, function (a, b) {
+                    var r = o[b], val = (typeof r === 'string' || typeof r === 'number' ? r : a);
+                    return escapeHTML(val);  // TODO: escape HTML-Entities
+                });
+            }
+        }
+
+        /**
+         * @ THX: Douglas Crockford (String.prototype.supplant)
+         * @ INSECURE_INTERPOLATE
+         */
+        function INSECURE_INTERPOLATE(str) {
+            return function interpolate(o) {
+                return str.replace(/{([^{}]*)}/g, function (a, b) {
+                    var r = o[b], val = (typeof r === 'string' || typeof r === 'number' ? r : a);
+                    return val;  // TODO: escape HTML-Entities
+                });
+            }
+        }
+
+        // #ThxRemy!
+        // https://remysharp.com/2010/07/21/throttling-function-calls
+        function debounce(fn, delay) {
+            var timer = null;
+            return function () {
+                var context = this, args = arguments;
+                clearTimeout(timer);
+                timer = setTimeout(function () {
+                    fn.apply(context, args);
+                }, delay);
+            };
+        }
         
-                /**
-                 * @ THX: Douglas Crockford (String.prototype.supplant)
-                 * @ INTERPOLATE
-                 */
-                function interpolate(str) {
-                    return function interpolate(o) {
-                        return str.replace(/{([^{}]*)}/g, function (a, b) {
-                            var r = o[b], val = (typeof r === 'string' || typeof r === 'number' ? r : a);
-                            return escapeHTML(val);  // TODO: escape HTML-Entities
-                        });
+        // #ThxRemy!
+        // https://remysharp.com/2010/07/21/throttling-function-calls
+        function throttle(fn, threshhold, scope) {
+            threshhold || (threshhold = 250);
+            var last,
+                deferTimer;
+            return function () {
+                var context = scope || this;
+
+                var now = +new Date,
+                    args = arguments;
+                if (last && now < last + threshhold) {
+                    // hold on to it
+                    clearTimeout(deferTimer);
+                    deferTimer = setTimeout(function () {
+                        last = now;
+                        fn.apply(context, args);
+                    }, threshhold);
+                } else {
+                    last = now;
+                    fn.apply(context, args);
+                }
+            };
+        }
+        
+        /**
+         * @ URLComponents
+         */
+        var URLComponents = function URLComponents(url) {
+            var parser = document.createElement('a');
+            parser.href = url;
+
+            this.hash = parser.hash;
+            this.host = parser.host;
+            this.hostname = parser.hostname;
+            this.href = parser.href;
+            this.origin = parser.origin;
+            this.pathname = parser.pathname;
+            this.port = parser.port;
+            this.protocol = parser.protocol;
+            this.search = parser.search;
+
+            return this;
+        };
+        var ParameterMap = function ParameterMap(str) {
+            var pair = str.split('=');
+            this.name = pair[0];
+            this.value = pair[1];
+            return this;
+        };
+        var QueryMap = function QueryMap(q) {
+            var query = decodeURIComponent(q);
+            var exp = /[^\?|\&]([^=]+)\=([^&]+)/g;
+            var res = query.match(exp);
+
+            for (var i = 0, len = res.length; i < len; i++) {
+                var map = new ParameterMap(res[i]);
+                this[map.name] = map.value;
+            }
+
+            return this;
+        };
+        
+        /**
+         * @ EXTERPOLATE | PARSE ROUTE-URI
+         */
+        function exterpolate(str) {
+            var str = str || '';
+            var re = /:[^\s/]+|{+[^\s/]+}+/g;
+            var matcher = new RegExp(str.replace(re, '([\\w-]+)'));
+
+            return function getValues(string) {
+                if (!string.match(matcher)) return false;
+                var string = string || '';
+                var result = string.match(matcher);
+                var keys = str.match(re);
+                var values = result.slice(1);
+                var map = {};
+
+                if (keys && values) {
+                    for (var i = 0, len = keys.length; i < len; i++) {
+                        var key = keys[i].replace(/[:{}]+/g, '');
+                        var val = values[i];
+                        if (key !== val) map[key] = val;
                     }
                 }
-        
-                /**
-                 * @ THX: Douglas Crockford (String.prototype.supplant)
-                 * @ INSECURE_INTERPOLATE
-                 */
-                function INSECURE_INTERPOLATE(str) {
-                    return function interpolate(o) {
-                        return str.replace(/{([^{}]*)}/g, function (a, b) {
-                            var r = o[b], val = (typeof r === 'string' || typeof r === 'number' ? r : a);
-                            return val;  // TODO: escape HTML-Entities
-                        });
-                    }
-                }
-        
-                // #ThxRemy!
-                // https://remysharp.com/2010/07/21/throttling-function-calls
-                function debounce(fn, delay) {
-                    var timer = null;
-                    return function () {
-                        var context = this, args = arguments;
-                        clearTimeout(timer);
-                        timer = setTimeout(function () {
-                            fn.apply(context, args);
-                        }, delay);
-                    };
-                }
-                
-                // #ThxRemy!
-                // https://remysharp.com/2010/07/21/throttling-function-calls
-                function throttle(fn, threshhold, scope) {
-                    threshhold || (threshhold = 250);
-                    var last,
-                        deferTimer;
-                    return function () {
-                        var context = scope || this;
-        
-                        var now = +new Date,
-                            args = arguments;
-                        if (last && now < last + threshhold) {
-                            // hold on to it
-                            clearTimeout(deferTimer);
-                            deferTimer = setTimeout(function () {
-                                last = now;
-                                fn.apply(context, args);
-                            }, threshhold);
-                        } else {
-                            last = now;
-                            fn.apply(context, args);
-                        }
-                    };
-                }
-                
-                /**
-                 * @ URLComponents
-                 */
-                var URLComponents = function URLComponents(url) {
-                    var parser = document.createElement('a');
-                    parser.href = url;
-        
-                    this.hash = parser.hash;
-                    this.host = parser.host;
-                    this.hostname = parser.hostname;
-                    this.href = parser.href;
-                    this.origin = parser.origin;
-                    this.pathname = parser.pathname;
-                    this.port = parser.port;
-                    this.protocol = parser.protocol;
-                    this.search = parser.search;
-        
-                    return this;
-                };
-                var ParameterMap = function ParameterMap(str) {
-                    var pair = str.split('=');
-                    this.name = pair[0];
-                    this.value = pair[1];
-                    return this;
-                };
-                var QueryMap = function QueryMap(q) {
-                    var query = decodeURIComponent(q);
-                    var exp = /[^\?|\&]([^=]+)\=([^&]+)/g;
-                    var res = query.match(exp);
-        
-                    for (var i = 0, len = res.length; i < len; i++) {
-                        var map = new ParameterMap(res[i]);
-                        this[map.name] = map.value;
-                    }
-        
-                    return this;
-                };
-                
-                /**
-                 * @ EXTERPOLATE | PARSE ROUTE-URI
-                 */
-                function exterpolate(str) {
-                    var str = str || '';
-                    var re = /:[^\s/]+|{+[^\s/]+}+/g;
-                    var matcher = new RegExp(str.replace(re, '([\\w-]+)'));
-        
-                    return function getValues(string) {
-                        if (!string.match(matcher)) return false;
-                        var string = string || '';
-                        var result = string.match(matcher);
-                        var keys = str.match(re);
-                        var values = result.slice(1);
-                        var map = {};
-        
-                        if (keys && values) {
-                            for (var i = 0, len = keys.length; i < len; i++) {
-                                var key = keys[i].replace(/[:{}]+/g, '');
-                                var val = values[i];
-                                if (key !== val) map[key] = val;
-                            }
-                        }
-        
-                        return map;
-                    };
-                }
+
+                return map;
+            };
+        }
         
         // export precepts
         this.console = window.console;
@@ -203,10 +204,11 @@
     var Core = function Core($) {
         var thus = this;
         var utils = $.utils;
-        var _services = { };
-        var _components = { };
-        var _configuration = {  // ... defaults
+        var services = { };
+        var components = { };
+        var configuration = {  // ... defaults
             selector: '[v]',
+            datasets: '[v-attribute]',  // includes <script type="application/json"> { items: [...] } </scrpt>
             target: document,
             bootstrap: function defaultBootstrap(target) {
                 var element = target;
@@ -239,24 +241,24 @@
         };
         
         function configure(config) {
-            this.utils.extend(_configuration, config);
-            return this;
+            this.utils.extend(this.configuration, config);
+            return this.utils.extend({ }, this.configuration);
         }
         function registerService(Service) {
             var id = Service.constructor;
             var service = { id: id, Constructor: Service };
-            _services[id] = _services[id] || service;
+            this.services[id] = this.services[id] || service;
             
             return this;
         }
         function registerComponent(id, Component) {
             var component = { id: id, Constructor: Component };
-            _components[id] = _components[id] || component;
+            this.components[id] = this.components[id] || component;
             return this;
         }
         
         function automaticallyRegisterModules() {
-            var config = _configuration
+            var config = this.configuration
               , bootstrap = config.bootstrap
               , target = config.target
               ;
@@ -266,13 +268,13 @@
         }
         
         function startServices() {
-            var config = _configuration
+            var config = this.configuration
               , decorators = config.decorators
               , ServiceSandbox = decorators.services
               ;
             
-            for (var id in _services) {
-                var _service = _services[id]
+            for (var id in this.services) {
+                var _service = this.services[id]
                   , Service = _service.Constructor
                   , sandbox = new ServiceSandbox(utils)
                   , service = new Service(sandbox)
@@ -284,25 +286,30 @@
         }
         
         /**
-         * Gets called by _configuration.bootstrap
+         * Gets called by this.configuration.bootstrap
          */
-        function bootstrap(element, id) {
-            if (!id || !element) return this;
-            if (!_components[id]) return utils.console.warn("Unregistered Component: " + id);
+        function bootstrap(element, data, id) {
+            if (!element || !id) return this;
+            if (!this.components[id]) return utils.console.warn("Unregistered Component: " + id);
             
-            var config = _configuration
+            var config = this.configuration
               , decorators = config.decorators
               , ComponentSandbox = decorators.components
               ;
-            var _component = _components[id]
+            var _component = this.components[id]
               , Component = _component.Constructor
               , sandbox = new ComponentSandbox(element)
               , component = new Component(sandbox)
-              , data = element.dataset || { }
+              , data = data || { }
               ;
             component.init(data);
             
-            return this;
+            return {
+                id: id,
+                component: component,
+                element: element,
+                data: data,
+            };
         }
         
         function init() {
@@ -315,9 +322,10 @@
         
         // export precepts
         this.utils = utils;
+        this.configuration = configuration;
+        this.services = services;
+        this.components = components;
         this.configure = configure;
-        this.services = _services;
-        this.components = _components;
         this.registerService = registerService;
         this.registerComponent = registerComponent;
         this.arm = automaticallyRegisterModules;
@@ -332,8 +340,7 @@
         var thus = this;
         
         function configure() {
-            core.configure.apply(core, arguments);
-            return this;
+            return core.configure.apply(core, arguments);
         }
         function service(Service) {
             core.registerService.apply(core, arguments);

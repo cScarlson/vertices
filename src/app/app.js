@@ -146,37 +146,41 @@
         
         // export precepts
         Sandbox.call(this, director);
-        this.dom = new jQuery(element);
+        this.target = element;
+        this.element = new jQuery(element);
         
         return this;
     };
     
-    V.config({
+    var DataDecorator = function DataDecorator(data) {
+        var data = data || { };
+        
+        jQuery.extend(this, data);
+        this.dataset = data;
+        
+        return this;
+    };
+    
+    var config = V.config({
         selector: '[data-behavior]',
+        datasets: '[data-attribute]',
         target: document,
         bootstrap: function bootstrap(target) {
             var element = target;
             var selector = this.selector;
-            var data = element.dataset || {};
+            var data = new DataDecorator(element.dataset);
             var ex = /[\s]+/img;
             var slug = data.behavior || element.v || '';
             var components = slug.split(ex);
             var children = element.children;// element.querySelectorAll(selector);
-            (this, document, data, slug, components, children);
             
             var resolveScope = function resolveScope(parent, child) {
                 var isDirectDescendant = (child.parentNode === parent);
-                (this, parent, child, isDirectDescendant);
                 if (isDirectDescendant) bootstrap.call(this, child);
             }.bind(this, element);
             
-            // components.forEach(this.bootstrap.bind(this, element));
-            // Array.prototype.forEach.call(children, resolveScope);
-            
-            // ... or? ...
-            
             Array.prototype.forEach.call(children, resolveScope);  // TODO: Optimize!!!
-            if (!!slug) components.forEach(this.bootstrap.bind(this, element));
+            if (!!slug) components.forEach(this.bootstrap.bind(this, element, data));
         },
         decorators: {
             services: ServiceSandbox,
@@ -188,6 +192,44 @@
         var thus = this;
         
         function init() {
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    V('include', function Include($) {
+        var thus = this;
+        
+        console.log('@include', $);
+        
+        function handleTemplate(template) {
+            console.log('@include#handleTemplate %o', template, config);
+            $.element.after(template);
+            // config.bootstrap($.target);  // Modules shouls NOT be using config, anyway. They should be using sandbox.
+        }
+        
+        function init(data) {
+            $.publish('include:initialized', { datum: true });
+            console.log('@Include#init', $, data);
+            $.element.load($.target.src, handleTemplate);
+            // $.element.load(data.src);
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    V('childX', function Test($) {
+        
+        function init(data) {
+            $.publish('child:initialized', { datum: true });
             return this;
         }
         
@@ -211,6 +253,18 @@
     });
     
     director.init();
-    window.onload = V.bootstrap.bind(V);
+    window.addEventListener( 'load', V.bootstrap.bind(V) );
+    /**
+     * RESOURCES:
+     *      * https://www.w3schools.com/howto/howto_html_include.asp
+     *      * https://www.html5rocks.com/en/tutorials/webcomponents/imports/
+     */
 }).call({ });
+
+/**
+ * CONCEPTS
+ */
+// var component = new V('some/path/to/template.html', { selector: 'widget' }, function Component($) {
+//     // ...
+// });
 
