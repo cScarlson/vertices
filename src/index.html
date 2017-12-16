@@ -56,6 +56,22 @@
     <div data-behavior="$alert"></div>
 
     <span>DOC</span>
+    
+    <!-- Contept -->
+    <a href="app/app.html" type="text/html" data-behavior="include"></a>
+    <!-- <script src="app/app.html" type="text/html" data-behavior="include"></script> -->
+    <!-- <link rel="import" href="app/app.html" v="some-component" /> --> <!-- Proper way? Only works in Chrome -->
+    <!-- <script>  // https://www.html5rocks.com/en/tutorials/webcomponents/imports/#includejs
+        var link = document.querySelector('link[rel="import"]');
+        var content = link.import;
+    
+        // Grab DOM from warning.html's document.
+        var el = content.querySelector('.app');
+    
+        // document.body.appendChild(el.cloneNode(true));
+        link.outerHTML = el.outerHTML;
+      </script> -->
+    <!-- Can this be done using JSONP? -->
 
     <div id="a" data-behavior="test">
         <span>A</span>
@@ -106,21 +122,6 @@
         </div>
 
     </div>
-    
-    <!-- Contept -->
-    <script src="app/app.html" type="text/html" data-behavior="include" data-src="app/app.html"></script>
-    <!-- <link rel="import" href="app/app.html" v="some-component" /> --> <!-- Proper way? Only works in Chrome -->
-    <!-- <script>  // https://www.html5rocks.com/en/tutorials/webcomponents/imports/#includejs
-        var link = document.querySelector('link[rel="import"]');
-        var content = link.import;
-    
-        // Grab DOM from warning.html's document.
-        var el = content.querySelector('.app');
-    
-        // document.body.appendChild(el.cloneNode(true));
-        link.outerHTML = el.outerHTML;
-      </script> -->
-    <!-- Can this be done using JSONP? -->
 
     <br /><br /><br />
     

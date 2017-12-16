@@ -3,8 +3,13 @@
     
     
     var Utils = function Utils() {
+        var thus = this;
+        
+        // export precepts
         this.debounce = new Function();
         this.timeout = setTimeout.bind(window);
+        
+        return this;
     };
     
     var EventHub = function EventHub() {
@@ -144,12 +149,30 @@
     var ComponentSandbox = function ComponentSandbox(element) {
         var thus = this;
         
-        // export precepts
-        Sandbox.call(this, director);
-        this.target = element;
-        this.element = new jQuery(element);
+        var Scaffold = function Scaffold(element) {  // Interface
+            var thus = this;
+            
+            function bootstrap(options) {  // V.bootstrap should only be available to Components
+                V.bootstrap(options);
+                return this;
+            }
+            
+            // export precepts
+            Sandbox.call(this, director);
+            this.target = element;
+            this.element = new jQuery(element);
+            this.select = jQuery.bind(jQuery);
+            this.bootstrap = bootstrap;
+            
+            return this;  // (f)
+        };
         
-        return this;
+        var f = Scaffold.call(function f(selector) {  // Default action
+            var $element = f.element.find(selector), element = $element[0];
+            return new ComponentSandbox(element);
+        }, element);
+        
+        return f;
     };
     
     var DataDecorator = function DataDecorator(data) {
@@ -164,7 +187,6 @@
     var config = V.config({
         selector: '[data-behavior]',
         datasets: '[data-attribute]',
-        target: document,
         bootstrap: function bootstrap(target) {
             var element = target;
             var selector = this.selector;
@@ -188,6 +210,10 @@
         },
     });
     
+    
+    // MODULES
+    
+    
     V(function TestService($) {
         var thus = this;
         
@@ -201,22 +227,25 @@
         return this;
     });
     
+    
     V('include', function Include($) {
         var thus = this;
         
-        console.log('@include', $);
-        
-        function handleTemplate(template) {
-            console.log('@include#handleTemplate %o', template, config);
-            $.element.after(template);
-            // config.bootstrap($.target);  // Modules shouls NOT be using config, anyway. They should be using sandbox.
+        /**
+         * @Intention: Handles bootstrapping after partial is loaded.
+         * @Variance: A different handler can be used for different types of elements.
+         *      * For a full list of elements that support automatic conversion of remote-source-attributes,
+         *      * see: https://stackoverflow.com/questions/2725156/complete-list-of-html-tag-attributes-which-have-a-url-value
+         */
+        function handleAnchorTemplate(template) {
+            var $template = $('.app');
+            $.element.replaceWith($template.element);
+            $.bootstrap({ target: $template.target });
         }
         
         function init(data) {
+            $.element.load($.target.href, handleAnchorTemplate);
             $.publish('include:initialized', { datum: true });
-            console.log('@Include#init', $, data);
-            $.element.load($.target.src, handleTemplate);
-            // $.element.load(data.src);
             return this;
         }
         
@@ -226,9 +255,40 @@
         return this;
     });
     
-    V('childX', function Test($) {
+    
+    V('partial', function Partial($) {
+        var thus = this;
+        
+        function handleBackgroundChanged(e, data) {
+            if (data.datum) $.element.css({ 'background': 'orangered' });
+        }
         
         function init(data) {
+            var $h1 = $('h1');
+            console.log('>--))>', $h1.element);
+            
+            setTimeout($h1.element.trigger.bind($h1.element, 'change-background'), 4000);
+            $.element.on('background-changed', handleBackgroundChanged);
+            $.publish('app:initialized', { datum: true });
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    })
+    // Notice V() --> V: V(e)(t)(c);
+    ('partial-child', function PartialChild($) {
+        var thus = this;
+        
+        function handleCSS() {
+            $.element.css({ 'background-color': '#fff', 'border-left': 'solid 1px orangered', 'color': '#333' });
+            $.element.trigger('background-changed', { datum: true });
+        }
+        
+        function init(data) {
+            $.element.on('change-background', handleCSS);
             $.publish('child:initialized', { datum: true });
             return this;
         }
@@ -239,9 +299,12 @@
         return this;
     });
     
+    
     V('test', function Test($) {
+        var thus = this;
         
         function init(data) {
+            $.element.css({ 'background-color': '#fff', 'border-left': 'solid 1px orangered', 'color': '#333' });
             $.publish('test:initialized', { datum: true });
             return this;
         }
@@ -252,8 +315,9 @@
         return this;
     });
     
+    
     director.init();
-    window.addEventListener( 'load', V.bootstrap.bind(V) );
+    window.addEventListener( 'load', V.bootstrap.bind(V, { target: document }) );
     /**
      * RESOURCES:
      *      * https://www.w3schools.com/howto/howto_html_include.asp

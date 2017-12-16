@@ -36,7 +36,7 @@
 ;(function (undefined) {
     'use strict';
     if (undefined) return;
-    var ENV = this || {};
+    var ENV = this || { };
     
     var utils = new function Utils() {
         
@@ -209,7 +209,6 @@
         var configuration = {  // ... defaults
             selector: '[v]',
             datasets: '[v-attribute]',  // includes <script type="application/json"> { items: [...] } </scrpt>
-            target: document,
             bootstrap: function defaultBootstrap(target) {
                 var element = target;
                 var selector = this.selector;
@@ -257,10 +256,10 @@
             return this;
         }
         
-        function automaticallyRegisterModules() {
+        function automaticallyRegisterModules(options) {
             var config = this.configuration
               , bootstrap = config.bootstrap
-              , target = config.target
+              , target = options.target
               ;
             
             this.startServices();
@@ -312,8 +311,9 @@
             };
         }
         
-        function init() {
-            this.arm();
+        function init(options) {
+            if (!options) throw Error("Vertices Core initialized without options");
+            this.arm(options);
             this.registerComponent = this.utils.noop;
             this.registerService = this.utils.noop;
             
@@ -360,8 +360,8 @@
             return this;
         }
         
-        function bootstrap() {
-            core.init();
+        function bootstrap(options) {
+            core.init(options);
             return this;
         }
         
