@@ -6,6 +6,7 @@
         var thus = this;
         
         // export precepts
+        this.extend = jQuery.extend.bind(jQuery);
         this.debounce = new Function();
         this.timeout = setTimeout.bind(window);
         
@@ -17,7 +18,8 @@
         var channels = { };
         
         function publish(channel) {
-            console.log('publish', arguments);
+            // var args = Array.prototype.splice.call(arguments, 0);
+            // console.log.apply(console, ['publish'].concat(args));
             return this;
         }
         
@@ -151,18 +153,26 @@
         
         var Scaffold = function Scaffold(element) {  // Interface
             var thus = this;
+            var $element = new jQuery(element);
+            
+            $element.parent = new Function();
             
             function bootstrap(options) {  // V.bootstrap should only be available to Components
                 V.bootstrap(options);
                 return this;
             }
             
+            function interpolate(string) {
+                return V.utils.interpolate(string);
+            }
+            
             // export precepts
             Sandbox.call(this, director);
             this.target = element;
-            this.element = new jQuery(element);
-            this.select = jQuery.bind(jQuery);
+            this.element = $element;
+            this.create = jQuery.bind(jQuery);
             this.bootstrap = bootstrap;
+            this.interpolate = interpolate;
             
             return this;  // (f)
         };
@@ -185,14 +195,14 @@
     };
     
     var config = V.config({
-        selector: '[data-behavior]',
+        selector: '[data-v]',
         datasets: '[data-attribute]',
         bootstrap: function bootstrap(target) {
             var element = target;
             var selector = this.selector;
             var data = new DataDecorator(element.dataset);
             var ex = /[\s]+/img;
-            var slug = data.behavior || element.v || '';
+            var slug = data.v || data.behavior || element.v || '';
             var components = slug.split(ex);
             var children = element.children;// element.querySelectorAll(selector);
             
@@ -211,7 +221,7 @@
     });
     
     
-    // MODULES
+    // SERVICES
     
     
     V(function TestService($) {
@@ -228,7 +238,100 @@
     });
     
     
-    V('include', function Include($) {
+    // MODULES
+    
+    
+    V('vJSON', function VJSON($) {
+        var thus = this;
+        
+        function init(data) {
+            var json = $.target.innerHTML, dataset = JSON.parse(json);
+            $.element.data(dataset);
+            setTimeout( $.element.trigger.bind($.element, 'V:JSON', dataset), 0 );
+            console.log('@vJSON', json, $.target.dataset, $.element.data());
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    
+    V('vJSON-get', function VJSONGet($) {
+        var thus = this;
+        
+        function init(data) {
+            console.log('@vJSON-get', $.target.src);
+            $.element.load($.target.src);
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    
+    V('vInterpolate', function VInterpolate($) {  // vInterpolate is used for {variable} bindings
+        var thus = this;
+        
+        function init(data) {
+            var template = $.target.innerHTML, $variables = data.dataset.variables || '{}', variables = JSON.parse($variables);
+            var interpolated = $.interpolate(template)(variables);
+            console.log('@vInterpolate', interpolated);
+            $.element.html(interpolated);
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    
+    V('vRepeat', function VRepeat($) {
+        var thus = this;
+        
+        // MOCK
+        var MOCK_DATA = JSON.stringify([
+            { "firstName": "Jonathan", "lastName": "Chapman", "message": "Have an apple?" },
+            { "firstName": "Brad", "lastName": "Pitt", "message": "Watch out for zombies!" },
+            { "firstName": "Kevin", "lastName": "Bacon", "message": "You know me?" }
+        ]);
+        $.element.attr({ 'data-items': MOCK_DATA });
+        
+        function repeat(template, item, i) {
+            var $element = $.create(template), element = $element[0], $ids = element.dataset.v;
+            var json = JSON.stringify(item), ids = $ids.replace('vRepeat', '');
+            
+            $element.attr({ 'data-v': ids, 'data-variables': json, 'data-items': null, 'data-v-repeat': i });
+            $.element.before($element);
+            $.bootstrap({ target: element });
+        }
+        
+        function init(data) {
+            var $template = $.element, target = $.target, template = target.outerHTML, key = data.items, items = data[key];
+            
+            this.items = JSON.parse(target.dataset.items);
+            this.items.forEach( repeat.bind(target, template) );
+            $.element.remove();
+            
+            return this;
+        }
+        
+        // export precepts
+        this.items = [ ];
+        this.init = init;
+        
+        return this;
+    });
+    
+    
+    V('vInclude', function VInclude($) {
         var thus = this;
         
         /**
@@ -256,11 +359,30 @@
     });
     
     
+    V('vAttributes', function VAttributes($) {  // vAttributes is used for Attribute-Directives
+        var thus = this;
+        
+        function init(data) {
+            console.log('@vAttributes');
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    
+    // ****
+    
+    
     V('partial', function Partial($) {
         var thus = this;
         
         function handleBackgroundChanged(e, data) {
             if (data.datum) $.element.css({ 'background': 'orangered' });
+            e.preventDefault();
         }
         
         function init(data) {
@@ -284,7 +406,7 @@
         
         function handleCSS() {
             $.element.css({ 'background-color': '#fff', 'border-left': 'solid 1px orangered', 'color': '#333' });
-            $.element.trigger('background-changed', { datum: true });
+            setTimeout( $.element.trigger.bind($.element, 'background-changed', { datum: true }), 2000);
         }
         
         function init(data) {

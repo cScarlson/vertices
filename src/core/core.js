@@ -199,6 +199,8 @@
         // export precepts
         this.console = window.console;
         this.extend = extend;
+        this.interpolate = interpolate;
+        this.INSECURE_INTERPOLATE = INSECURE_INTERPOLATE;
     };
     
     var Core = function Core($) {
@@ -207,7 +209,7 @@
         var services = { };
         var components = { };
         var configuration = {  // ... defaults
-            selector: '[v]',
+            selector: '[data-v]' || '[data-behavior]',
             datasets: '[v-attribute]',  // includes <script type="application/json"> { items: [...] } </scrpt>
             bootstrap: function defaultBootstrap(target) {
                 var element = target;

@@ -1,17 +1,21 @@
 ﻿<!DOCTYPE html>
-<html data-behavior="document" data-some-property="test">
+<html data-v="document" data-some-property="test">
 <head>
     <title></title>
 	<meta charset="utf-8" />
     <!--<link href="core/core.css" rel="stylesheet" />-->
     <style>
-        [data-behavior] {
+        [data-v] {
             background: #222;
             color: #fff;
             border: solid 1px #fff;
             min-width: 200px;
             min-height: 100px;
             margin: 4px 4px 4px 4px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
         }
     </style>
     <script type="application/json" data-config="doc">
@@ -30,38 +34,49 @@
     </script>
 </head>
 <body>
-    <div data-behavior="example">
+    <div data-v="example">
         Example Text
     </div>
     
     <br /><br /><br />
     
     <ul>
-        <li class="hide" data-behavior="$repeat">
-            <script type="application/json">
-                {
-                    "data": [
-                        { "firstName": "Jonathan", "lastName": "Chapman", "message": "Have an apple?" },
-                        { "firstName": "Brad", "lastName": "Pitt", "message": "Watch out for zombies!" },
-                        { "firstName": "Kevin", "lastName": "Bacon", "message": "You know me?" }
-                    ]
-                }
-            </script>
-            <!-- OR -->
-            <script src="https://jsonplaceholder.typicode.com/posts/1" type="application/json"></script>
+        <script type="application/json" data-v="vJSON">
+            {
+                "people": [
+                    { "firstName": "Jonathan", "lastName": "Chapman", "message": "Have an apple?" },
+                    { "firstName": "Brad", "lastName": "Pitt", "message": "Watch out for zombies!" },
+                    { "firstName": "Kevin", "lastName": "Bacon", "message": "You know me?" }
+                ]
+            }
+        </script>
+        <!-- OR -->
+        <script src="https://jsonplaceholder.typicode.com/posts/1" type="application/json" data-v="vJSON-get"></script>
+        
+        <li class="item" data-v="vInterpolate" data-variables='{"firstName":"Brad","lastName":"Pitt","message":"Watch out for zombies!"}'>
+            <mark>{firstName} {lastName}</mark>
+            <br />
+            {message}
+        </li>
+        <li class="item" data-v="vRepeat vInterpolate" ng-repeat="item in items">
             {firstName} {lastName}
             <br />
             {message}
         </li>
+        <li class="item" data-v="vInterpolate" data-variables='{"firstName":"Jennifer","lastName":"Lawrence","message":"Haiyah!"}'>
+            <mark>{firstName} {lastName}</mark>
+            <br />
+            {message}
+        </li>
     </ul>
-    <div data-behavior="$backdrop"></div>
-    <div data-behavior="$alert"></div>
+    <div data-v="$backdrop"></div>
+    <div data-v="$alert"></div>
 
     <span>DOC</span>
     
     <!-- Contept -->
-    <a href="app/app.html" type="text/html" data-behavior="include"></a>
-    <!-- <script src="app/app.html" type="text/html" data-behavior="include"></script> -->
+    <a href="app/app.html" type="text/html" data-v="vInclude"></a>
+    <!-- <script src="app/app.html" type="text/html" data-v="include"></script> -->
     <!-- <link rel="import" href="app/app.html" v="some-component" /> --> <!-- Proper way? Only works in Chrome -->
     <!-- <script>  // https://www.html5rocks.com/en/tutorials/webcomponents/imports/#includejs
         var link = document.querySelector('link[rel="import"]');
@@ -75,35 +90,35 @@
       </script> -->
     <!-- Can this be done using JSONP? -->
 
-    <div id="a" data-behavior="test">
+    <div id="a" data-v="test">
         <span>A</span>
 
-        <div id="aa" data-behavior="test">
+        <div id="aa" data-v="test">
             <span>AA</span>
 
-            <div id="aaa" data-behavior="test">
+            <div id="aaa" data-v="test">
                 <span>AAA</span>
             </div>
-            <div id="aab" data-behavior="test">
+            <div id="aab" data-v="test">
                 <span>AAB</span>
             </div>
-            <div id="aac" data-behavior="test">
+            <div id="aac" data-v="test">
                 <span>AAC</span>
             </div>
         </div>
 
-        <div id="ab" data-behavior="test">
+        <div id="ab" data-v="test">
             <span>AB</span>
 
-            <div id="aba" data-behavior="test">
+            <div id="aba" data-v="test">
                 <span>ABA</span>
             </div>
         </div>
 
-        <div id="ac" data-behavior="test">
+        <div id="ac" data-v="test">
             <span>AC</span>
 
-            <div id="aca" data-behavior="test">
+            <div id="aca" data-v="test">
                 <span>ACA</span>
             </div>
         </div>
@@ -115,10 +130,10 @@
     <div data-wrapper="test">
         <span>NONE</span>
 
-        <div id="b" data-behavior="test">
+        <div id="b" data-v="test">
             <span>B</span>
 
-            <div id="ba" data-behavior="test">
+            <div id="ba" data-v="test">
                 <span>BA</span>
             </div>
         </div>
@@ -128,7 +143,7 @@
     <br /><br /><br />
     
 
-    <!--<div data-behavior="$include">core/components/components.html</div>-->
+    <!--<div data-v="$include">core/components/components.html</div>-->
     
     <script src="lib/jquery.js"></script>
     <script src="core/core.js"></script>
