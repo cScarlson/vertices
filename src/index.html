@@ -10,7 +10,7 @@
             color: #fff;
             border: solid 1px #fff;
             min-width: 200px;
-            min-height: 100px;
+            min-height: 50px;
             margin: 4px 4px 4px 4px;
         }
         ul {
@@ -40,7 +40,7 @@
     
     <br /><br /><br />
     
-    <ul>
+    <ul data-v="theUL">
         <script type="application/json" data-v="vJSON">
             {
                 "people": [
@@ -53,17 +53,17 @@
         <!-- OR -->
         <script src="https://jsonplaceholder.typicode.com/posts/1" type="application/json" data-v="vJSON-get"></script>
         
-        <li class="item" data-v="vInterpolate" data-variables='{"firstName":"Brad","lastName":"Pitt","message":"Watch out for zombies!"}'>
+        <li class="item first" data-v="vInterpolate" data-vinterpolate='{"firstName":"Brad","lastName":"Pitt","message":"Watch out for zombies!"}'>
             <mark>{firstName} {lastName}</mark>
             <br />
             {message}
         </li>
-        <li class="item" data-v="vRepeat vInterpolate" ng-repeat="item in items">
+        <li class="item nth" data-v="vRepeat vInterpolate" data-vrepeat='[{"firstName":"Jonathan","lastName":"Chapman","message":"Have an apple?"},{"firstName":"Brad","lastName":"Pitt","message":"Watch out for zombies!"},{"firstName":"Kevin","lastName":"Bacon","message":"You know me?"}]'>
             {firstName} {lastName}
             <br />
             {message}
         </li>
-        <li class="item" data-v="vInterpolate" data-variables='{"firstName":"Jennifer","lastName":"Lawrence","message":"Haiyah!"}'>
+        <li class="item last" data-v="vInterpolate notfound" data-vinterpolate='{"firstName":"Jennifer","lastName":"Lawrence","message":"Haiyah!"}'>
             <mark>{firstName} {lastName}</mark>
             <br />
             {message}
@@ -74,7 +74,7 @@
 
     <span>DOC</span>
     
-    <!-- Contept -->
+    <!-- Concept -->
     <a href="app/app.html" type="text/html" data-v="vInclude"></a>
     <!-- <script src="app/app.html" type="text/html" data-v="include"></script> -->
     <!-- <link rel="import" href="app/app.html" v="some-component" /> --> <!-- Proper way? Only works in Chrome -->

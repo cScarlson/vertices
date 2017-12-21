@@ -7,8 +7,8 @@
         
         // export precepts
         this.extend = jQuery.extend.bind(jQuery);
+        this.timeout = window.setTimeout.bind(window);
         this.debounce = new Function();
-        this.timeout = setTimeout.bind(window);
         
         return this;
     };
@@ -197,22 +197,31 @@
     var config = V.config({
         selector: '[data-v]',
         datasets: '[data-attribute]',
-        bootstrap: function bootstrap(target) {
+        bootstrap: function handleBootstrap(target, core) {
             var element = target;
             var selector = this.selector;
             var data = new DataDecorator(element.dataset);
             var ex = /[\s]+/img;
             var slug = data.v || data.behavior || element.v || '';
-            var components = slug.split(ex);
+            var ids = slug.split(ex);
             var children = element.children;// element.querySelectorAll(selector);
+            var components = [ ];
             
             var resolveScope = function resolveScope(parent, child) {
                 var isDirectDescendant = (child.parentNode === parent);
-                if (isDirectDescendant) bootstrap.call(this, child);
-            }.bind(this, element);
+                if (isDirectDescendant) handleBootstrap.call(this, child, this);
+            }.bind(core, element);
             
+            if (!!slug) components = ids.map(core.bootstrap.bind(core, element, data));
             Array.prototype.forEach.call(children, resolveScope);  // TODO: Optimize!!!
-            if (!!slug) components.forEach(this.bootstrap.bind(this, element, data));
+            components.forEach( mountComponent.bind(core) );
+            
+            function mountComponent(component) {
+                if (!component) return;
+                var instance = component.instance, handleMount = instance.handleMount;
+                if (handleMount) handleMount.call(instance);
+            }
+            
         },
         decorators: {
             services: ServiceSandbox,
@@ -241,14 +250,41 @@
     // MODULES
     
     
+    V('vInclude', function VInclude($) {
+        var thus = this;
+        
+        /**
+         * @Intention: Handles bootstrapping after partial is loaded.
+         * @Variance: A different handler can be used for different types of elements.
+         *      * For a full list of elements that support automatic conversion of remote-source-attributes,
+         *      * see: https://stackoverflow.com/questions/2725156/complete-list-of-html-tag-attributes-which-have-a-url-value
+         */
+        function handleAnchorTemplate(template) {
+            var $template = $('.app');
+            $.element.replaceWith($template.element);
+            $.bootstrap({ target: $template.target });
+        }
+        
+        function init(data) {
+            $.element.load($.target.href, handleAnchorTemplate);
+            $.publish('include:initialized', { datum: true });
+            return this;
+        }
+        
+        // export precepts
+        this.init = init;
+        
+        return this;
+    });
+    
+    
     V('vJSON', function VJSON($) {
         var thus = this;
         
         function init(data) {
             var json = $.target.innerHTML, dataset = JSON.parse(json);
             $.element.data(dataset);
-            setTimeout( $.element.trigger.bind($.element, 'V:JSON', dataset), 0 );
-            console.log('@vJSON', json, $.target.dataset, $.element.data());
+            $.timeout( $.element.trigger.bind($.element, 'V:JSON', dataset), 0 );
             return this;
         }
         
@@ -279,9 +315,9 @@
         var thus = this;
         
         function init(data) {
-            var template = $.target.innerHTML, $variables = data.dataset.variables || '{}', variables = JSON.parse($variables);
+            var template = $.target.innerHTML, $variables = data.dataset.vinterpolate || '{}', variables = JSON.parse($variables);
             var interpolated = $.interpolate(template)(variables);
-            console.log('@vInterpolate', interpolated);
+            
             $.element.html(interpolated);
             return this;
         }
@@ -296,64 +332,39 @@
     V('vRepeat', function VRepeat($) {
         var thus = this;
         
-        // MOCK
-        var MOCK_DATA = JSON.stringify([
-            { "firstName": "Jonathan", "lastName": "Chapman", "message": "Have an apple?" },
-            { "firstName": "Brad", "lastName": "Pitt", "message": "Watch out for zombies!" },
-            { "firstName": "Kevin", "lastName": "Bacon", "message": "You know me?" }
-        ]);
-        $.element.attr({ 'data-items': MOCK_DATA });
-        
         function repeat(template, item, i) {
-            var $element = $.create(template), element = $element[0], $ids = element.dataset.v;
-            var json = JSON.stringify(item), ids = $ids.replace('vRepeat', '');
+            var $element = $.create(template), element = $element[0], $ids = element.dataset.v, json = JSON.stringify(item);
+            var _ids = $ids.split(' '), index = _ids.indexOf('vRepeat'), _r = _ids.splice(index, 1), ids = _ids.join(' ');
             
-            $element.attr({ 'data-v': ids, 'data-variables': json, 'data-items': null, 'data-v-repeat': i });
-            $.element.before($element);
+            $element.attr({ 'data-v': ids, 'data-vinterpolate': json, 'data-items': null, 'data-v-repeat': i });
+            return element;
+        }
+        
+        function bootstrapElements(element) {
             $.bootstrap({ target: element });
         }
         
         function init(data) {
-            var $template = $.element, target = $.target, template = target.outerHTML, key = data.items, items = data[key];
+            var $template = $.element, target = $.target, template = target.outerHTML, items = JSON.parse(target.dataset.vrepeat);
+            var $comment = $.create('<!-- vRepeat -->'), elements = items.map( repeat.bind(this, template) );
             
-            this.items = JSON.parse(target.dataset.items);
-            this.items.forEach( repeat.bind(target, template) );
-            $.element.remove();
+            $.element.replaceWith($comment);
+            $comment.after(elements);
+            elements.forEach(bootstrapElements);
+            
+            this.items = items;
             
             return this;
+        }
+        
+        function handleMount() {
+            console.log('@VRepeat#handleMount');
         }
         
         // export precepts
         this.items = [ ];
-        this.init = init;
-        
-        return this;
-    });
-    
-    
-    V('vInclude', function VInclude($) {
-        var thus = this;
-        
-        /**
-         * @Intention: Handles bootstrapping after partial is loaded.
-         * @Variance: A different handler can be used for different types of elements.
-         *      * For a full list of elements that support automatic conversion of remote-source-attributes,
-         *      * see: https://stackoverflow.com/questions/2725156/complete-list-of-html-tag-attributes-which-have-a-url-value
-         */
-        function handleAnchorTemplate(template) {
-            var $template = $('.app');
-            $.element.replaceWith($template.element);
-            $.bootstrap({ target: $template.target });
-        }
-        
-        function init(data) {
-            $.element.load($.target.href, handleAnchorTemplate);
-            $.publish('include:initialized', { datum: true });
-            return this;
-        }
-        
-        // export precepts
-        this.init = init;
+        this.init = $.timeout.bind(window, init.bind(this));
+        this.handleMount = handleMount;
         
         return this;
     });
@@ -387,16 +398,26 @@
         
         function init(data) {
             var $h1 = $('h1');
-            console.log('>--))>', $h1.element);
+            // console.log('>--))>', $h1.element);
             
-            setTimeout($h1.element.trigger.bind($h1.element, 'change-background'), 4000);
+            $.timeout($h1.element.trigger.bind($h1.element, 'change-background'), 4000);
             $.element.on('background-changed', handleBackgroundChanged);
             $.publish('app:initialized', { datum: true });
+            console.log('@partial#init');
             return this;
+        }
+        
+        // function init(data) {
+        //     console.log('@partial#init');
+        // }
+        
+        function handleMount() {
+            console.log('@partial#handleMount');
         }
         
         // export precepts
         this.init = init;
+        this.handleMount = handleMount;
         
         return this;
     })
@@ -406,17 +427,27 @@
         
         function handleCSS() {
             $.element.css({ 'background-color': '#fff', 'border-left': 'solid 1px orangered', 'color': '#333' });
-            setTimeout( $.element.trigger.bind($.element, 'background-changed', { datum: true }), 2000);
+            $.timeout( $.element.trigger.bind($.element, 'background-changed', { datum: true }), 2000);
         }
         
         function init(data) {
             $.element.on('change-background', handleCSS);
             $.publish('child:initialized', { datum: true });
+            console.log('@partial-child#init');
             return this;
+        }
+        
+        // function init(data) {
+        //     console.log('@partial-child#init');
+        // }
+        
+        function handleMount() {
+            console.log('@partial-child#handleMount');
         }
         
         // export precepts
         this.init = init;
+        this.handleMount = handleMount;
         
         return this;
     });

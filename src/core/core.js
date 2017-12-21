@@ -265,7 +265,7 @@
               ;
             
             this.startServices();
-            bootstrap.call(this, target);
+            bootstrap.call(config, target, this);
         }
         
         function startServices() {
@@ -288,29 +288,31 @@
         
         /**
          * Gets called by this.configuration.bootstrap
+         * TODO: Rename `details` to `api` and provide an API for mapping, starting, stopping & destroying (etc) modules.
          */
         function bootstrap(element, data, id) {
-            if (!element || !id) return this;
-            if (!this.components[id]) return utils.console.warn("Unregistered Component: " + id);
+            if (!element || !id) return null;
+            if (!this.components[id]) return utils.console.warn("Unregistered Component: " + id) && null || null;
             
             var config = this.configuration
               , decorators = config.decorators
               , ComponentSandbox = decorators.components
               ;
-            var _component = this.components[id]
-              , Component = _component.Constructor
+            var component = this.components[id]
+              , Component = component.Constructor
               , sandbox = new ComponentSandbox(element)
-              , component = new Component(sandbox)
+              , instance = new Component(sandbox)
               , data = data || { }
               ;
-            component.init(data);
-            
-            return {
+            var details = {
                 id: id,
-                component: component,
+                instance: instance,
                 element: element,
                 data: data,
             };
+            instance.init(data);
+            
+            return details;
         }
         
         function init(options) {
