@@ -1,6 +1,6 @@
 
-;(function iif() {
-    
+;(function iif(V) {
+    'use strict';
     
     var Utils = function Utils() {
         var thus = this;
@@ -12,7 +12,7 @@
         
         return this;
     };
-    
+
     var EventHub = function EventHub() {
         var thus = this;
         var channels = { };
@@ -41,7 +41,7 @@
         
         return this;
     };
-    
+
     var Mediator = function Mediator(EventHub) {
         var thus = this;
         var hub = new EventHub();
@@ -84,6 +84,7 @@
         
         return this;
     };
+    
     var director = new (function Director(Mediator) {
         var thus = this;
         var channels = {
@@ -111,7 +112,7 @@
         
         return this;
     })(Mediator);
-    
+
     var Sandbox = function Sandbox(director) {
         var thus = this;
         
@@ -136,7 +137,7 @@
         
         return this;
     };
-    
+
     var ServiceSandbox = function ServiceSandbox(utils) {
         var thus = this;
         
@@ -147,7 +148,7 @@
         
         return this;
     };
-    
+
     var ComponentSandbox = function ComponentSandbox(element) {
         var thus = this;
         
@@ -184,7 +185,7 @@
         
         return f;
     };
-    
+
     var DataDecorator = function DataDecorator(data) {
         var data = data || { };
         
@@ -193,7 +194,7 @@
         
         return this;
     };
-    
+
     var config = V.config({
         selector: '[data-v]',
         datasets: '[data-attribute]',
@@ -228,11 +229,11 @@
             components: ComponentSandbox
         },
     });
-    
-    
+
+
     // SERVICES
-    
-    
+
+
     V(function TestService($) {
         var thus = this;
         
@@ -245,11 +246,11 @@
         
         return this;
     });
-    
-    
+
+
     // MODULES
-    
-    
+
+
     V('vInclude', function VInclude($) {
         var thus = this;
         
@@ -260,7 +261,7 @@
          *      * see: https://stackoverflow.com/questions/2725156/complete-list-of-html-tag-attributes-which-have-a-url-value
          */
         function handleAnchorTemplate(template) {
-            var $template = $('.app');
+            var $template = $('.partial');
             $.element.replaceWith($template.element);
             $.bootstrap({ target: $template.target });
         }
@@ -276,8 +277,8 @@
         
         return this;
     });
-    
-    
+
+
     V('vJSON', function VJSON($) {
         var thus = this;
         
@@ -293,8 +294,8 @@
         
         return this;
     });
-    
-    
+
+
     V('vJSON-get', function VJSONGet($) {
         var thus = this;
         
@@ -309,8 +310,8 @@
         
         return this;
     });
-    
-    
+
+
     V('vInterpolate', function VInterpolate($) {  // vInterpolate is used for {variable} bindings
         var thus = this;
         
@@ -327,8 +328,8 @@
         
         return this;
     });
-    
-    
+
+
     V('vRepeat', function VRepeat($) {
         var thus = this;
         
@@ -357,19 +358,14 @@
             return this;
         }
         
-        function handleMount() {
-            console.log('@VRepeat#handleMount');
-        }
-        
         // export precepts
         this.items = [ ];
         this.init = $.timeout.bind(window, init.bind(this));
-        this.handleMount = handleMount;
         
         return this;
     });
-    
-    
+
+
     V('vAttributes', function VAttributes($) {  // vAttributes is used for Attribute-Directives
         var thus = this;
         
@@ -383,11 +379,11 @@
         
         return this;
     });
-    
-    
+
+
     // ****
-    
-    
+
+
     V('partial', function Partial($) {
         var thus = this;
         
@@ -451,8 +447,8 @@
         
         return this;
     });
-    
-    
+
+
     V('test', function Test($) {
         var thus = this;
         
@@ -467,8 +463,8 @@
         
         return this;
     });
-    
-    
+
+
     director.init();
     window.addEventListener( 'load', V.bootstrap.bind(V, { target: document }) );
     /**
@@ -476,12 +472,12 @@
      *      * https://www.w3schools.com/howto/howto_html_include.asp
      *      * https://www.html5rocks.com/en/tutorials/webcomponents/imports/
      */
-}).call({ });
 
-/**
- * CONCEPTS
- */
-// var component = new V('some/path/to/template.html', { selector: 'widget' }, function Component($) {
-//     // ...
-// });
+    /**
+     * CONCEPTS
+     */
+    // var component = new V('some/path/to/template.html', { selector: 'widget' }, function Component($) {
+    //     // ...
+    // });
 
+})(window.V);

@@ -33,10 +33,11 @@
     }
 })();
 
-;(function (undefined) {
+var ENV = window || this;
+;(function iif(undefined) {
     'use strict';
-    if (undefined) return;
-    var ENV = this || { };
+    if (!!undefined) return;
+    var ENV = this;
     
     var utils = new function Utils() {
         
@@ -260,9 +261,9 @@
         
         function automaticallyRegisterModules(options) {
             var config = this.configuration
-              , bootstrap = config.bootstrap
-              , target = options.target
-              ;
+                , bootstrap = config.bootstrap
+                , target = options.target
+                ;
             
             this.startServices();
             bootstrap.call(config, target, this);
@@ -270,16 +271,16 @@
         
         function startServices() {
             var config = this.configuration
-              , decorators = config.decorators
-              , ServiceSandbox = decorators.services
-              ;
+                , decorators = config.decorators
+                , ServiceSandbox = decorators.services
+                ;
             
             for (var id in this.services) {
                 var _service = this.services[id]
-                  , Service = _service.Constructor
-                  , sandbox = new ServiceSandbox(utils)
-                  , service = new Service(sandbox)
-                  ;
+                    , Service = _service.Constructor
+                    , sandbox = new ServiceSandbox(utils)
+                    , service = new Service(sandbox)
+                    ;
                 service.init();
             }
             
@@ -295,15 +296,15 @@
             if (!this.components[id]) return utils.console.warn("Unregistered Component: " + id) && null || null;
             
             var config = this.configuration
-              , decorators = config.decorators
-              , ComponentSandbox = decorators.components
-              ;
+                , decorators = config.decorators
+                , ComponentSandbox = decorators.components
+                ;
             var component = this.components[id]
-              , Component = component.Constructor
-              , sandbox = new ComponentSandbox(element)
-              , instance = new Component(sandbox)
-              , data = data || { }
-              ;
+                , Component = component.Constructor
+                , sandbox = new ComponentSandbox(element)
+                , instance = new Component(sandbox)
+                , data = data || { }
+                ;
             var details = {
                 id: id,
                 instance: instance,
@@ -357,8 +358,8 @@
         
         function register(id, Component) {
             var method = { '$component': 'component', '$service': 'service' }[ id ]
-              , method = method || { 'function': 'service', 'string': 'component' }[ typeof id ]
-              ;
+                , method = method || { 'function': 'service', 'string': 'component' }[ typeof id ]
+                ;
             this[method].apply(this, arguments);
             
             return this;
@@ -395,4 +396,4 @@
     })(Core, Facade, utils);
     
     ENV['V'] = ENV['Vertices'] = Vertex;
-}).call(this);
+}).call(ENV);
